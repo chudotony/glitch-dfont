@@ -3,3 +3,10 @@ Exported a `.dfont` with 9 glyphs via FontForge with 15, 25 and 50 sizes. The wo
 - 562-565 and 570-571, the glyphs are empty...
 - few files from 589, the glyphs disappear from time to time
 - 597 - numbers messed up! 600-601 - glyphs messed up!
+
+But these were just replacements. Here some glyph changed finally:
+- ..-... - 0
+- 2058-2064 - 1
+- 2065-2075 - 2
+- ...
+- and so on till 2142!
