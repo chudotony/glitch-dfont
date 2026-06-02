@@ -1,5 +1,6 @@
 const fileInput = document.getElementById("fileInput");
 const previewTextInput = document.getElementById("previewText");
+const strikeSelect = document.getElementById("strikeSelect");
 const signatureInput = document.getElementById("signatureInput");
 const corruptLengthInput = document.getElementById("corruptLengthInput");
 const zoomInput = document.getElementById("zoomInput");
@@ -21,7 +22,16 @@ let currentNFNTs = [];
 let currentNFNTErrors = [];
 let currentSFNTStrikes = [];
 let currentSFNTErrors = [];
-let glitchSeed = 0x4d4143;
+let strikeTargets = [];
+let strikeEdits = new Map();
+let selectedStrikeKey = null;
+let isSyncingStrikeControls = false;
+const defaultStrikeEdit = {
+  signatureText: "00 01 01 00 01",
+  length: 96,
+  amount: 34,
+  seed: 0x4d4143
+};
 
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
@@ -34,8 +44,22 @@ fileInput.addEventListener("change", async () => {
 });
 
 previewTextInput.addEventListener("input", renderAll);
-signatureInput.addEventListener("input", rebuildCorruptedDfont);
-corruptLengthInput.addEventListener("input", rebuildCorruptedDfont);
+
+strikeSelect.addEventListener("change", () => {
+  selectedStrikeKey = strikeSelect.value || null;
+  syncControlsFromSelectedStrike();
+  renderAll();
+});
+
+signatureInput.addEventListener("input", () => {
+  updateSelectedStrikeEdit({ signatureText: signatureInput.value });
+  rebuildCorruptedDfont();
+});
+
+corruptLengthInput.addEventListener("input", () => {
+  updateSelectedStrikeEdit({ length: getCorruptLength() });
+  rebuildCorruptedDfont();
+});
 
 zoomInput.addEventListener("input", () => {
   updateControlReadouts();
@@ -44,11 +68,12 @@ zoomInput.addEventListener("input", () => {
 
 glitchInput.addEventListener("input", () => {
   updateControlReadouts();
+  updateSelectedStrikeEdit({ amount: getGlitchAmount() });
   rebuildCorruptedDfont();
 });
 
 rerollButton.addEventListener("click", () => {
-  glitchSeed = Math.floor(Math.random() * 0xffffffff);
+  updateSelectedStrikeEdit({ seed: Math.floor(Math.random() * 0xffffffff) });
   rebuildCorruptedDfont();
 });
 
@@ -67,6 +92,8 @@ async function loadDfont(file) {
 
   try {
     originalBuffer = await file.arrayBuffer();
+    discoverStrikeTargets();
+    populateStrikeSelect();
     rebuildCorruptedDfont();
   } catch (error) {
     console.error(error);
@@ -74,6 +101,88 @@ async function loadDfont(file) {
     output.className = "notice error";
     output.textContent = "Could not read this file as a .dfont resource fork.";
   }
+}
+
+function discoverStrikeTargets() {
+  strikeTargets = [];
+  strikeEdits = new Map();
+  selectedStrikeKey = null;
+
+  const resources = parseResourceFork(originalBuffer);
+
+  for (const resource of resources.filter(item => item.type === "sfnt")) {
+    try {
+      const parsed = parseBitmapSFNT(resource.data);
+
+      parsed.strikes.forEach((strike, index) => {
+        if (!Number.isFinite(strike.dataStart) || !Number.isFinite(strike.dataEnd) || strike.dataEnd <= strike.dataStart) {
+          return;
+        }
+
+        const key = `sfnt:${resource.id}:${index}`;
+        const target = {
+          key,
+          type: "sfnt",
+          label: `sfnt ${resource.id} / ${strike.ppemY}px`,
+          resourceId: resource.id,
+          scopeStart: resource.absoluteDataOffset + strike.dataStart,
+          scopeEnd: resource.absoluteDataOffset + strike.dataEnd
+        };
+
+        strikeTargets.push(target);
+        strikeEdits.set(key, createDefaultStrikeEdit());
+      });
+    } catch (error) {
+      // Unsupported sfnt resources are reported after corrupted parsing.
+    }
+  }
+
+  for (const resource of resources.filter(item => item.type === "NFNT")) {
+    try {
+      const nfnt = parseNFNT(resource.data);
+      const key = `NFNT:${resource.id}`;
+      const target = {
+        key,
+        type: "NFNT",
+        label: `NFNT ${resource.id} / ${nfnt.fRectHeight}px`,
+        resourceId: resource.id,
+        scopeStart: resource.absoluteDataOffset + nfnt.bitImageOffset,
+        scopeEnd: resource.absoluteDataOffset + nfnt.bitImageOffset + nfnt.bitImageBytes
+      };
+
+      strikeTargets.push(target);
+      strikeEdits.set(key, createDefaultStrikeEdit());
+    } catch (error) {
+      // Dummy NFNT records are reported after corrupted parsing.
+    }
+  }
+
+  selectedStrikeKey = strikeTargets[0] ? strikeTargets[0].key : null;
+}
+
+function populateStrikeSelect() {
+  strikeSelect.innerHTML = "";
+
+  if (strikeTargets.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No editable strikes";
+    strikeSelect.appendChild(option);
+    strikeSelect.disabled = true;
+    syncControlsFromSelectedStrike();
+    return;
+  }
+
+  for (const target of strikeTargets) {
+    const option = document.createElement("option");
+    option.value = target.key;
+    option.textContent = target.label;
+    strikeSelect.appendChild(option);
+  }
+
+  strikeSelect.disabled = false;
+  strikeSelect.value = selectedStrikeKey;
+  syncControlsFromSelectedStrike();
 }
 
 function rebuildCorruptedDfont() {
@@ -86,7 +195,7 @@ function rebuildCorruptedDfont() {
   }
 
   try {
-    const result = corruptDfontBytes(originalBuffer, getSignatureBytes(), getCorruptLength(), getGlitchAmount() / 100, glitchSeed);
+    const result = corruptDfontBytes(originalBuffer, strikeTargets, strikeEdits);
     corruptedBuffer = result.buffer;
     corruptionInfo = result.info;
     currentResources = parseResourceFork(corruptedBuffer);
@@ -129,6 +238,52 @@ function resetParsedState() {
   currentNFNTErrors = [];
   currentSFNTStrikes = [];
   currentSFNTErrors = [];
+}
+
+function createDefaultStrikeEdit() {
+  return { ...defaultStrikeEdit };
+}
+
+function getSelectedStrikeEdit() {
+  if (!selectedStrikeKey || !strikeEdits.has(selectedStrikeKey)) {
+    return null;
+  }
+
+  return strikeEdits.get(selectedStrikeKey);
+}
+
+function updateSelectedStrikeEdit(patch) {
+  if (isSyncingStrikeControls) {
+    return;
+  }
+
+  const edit = getSelectedStrikeEdit();
+
+  if (!edit) {
+    return;
+  }
+
+  Object.assign(edit, patch);
+}
+
+function syncControlsFromSelectedStrike() {
+  const edit = getSelectedStrikeEdit();
+  isSyncingStrikeControls = true;
+
+  if (!edit) {
+    signatureInput.value = defaultStrikeEdit.signatureText;
+    corruptLengthInput.value = String(defaultStrikeEdit.length);
+    glitchInput.value = String(defaultStrikeEdit.amount);
+    isSyncingStrikeControls = false;
+    updateControlReadouts();
+    return;
+  }
+
+  signatureInput.value = edit.signatureText;
+  corruptLengthInput.value = String(edit.length);
+  glitchInput.value = String(edit.amount);
+  isSyncingStrikeControls = false;
+  updateControlReadouts();
 }
 
 function renderAll() {
@@ -216,7 +371,8 @@ function renderAll() {
 
 function updateControlReadouts() {
   zoomValue.textContent = `${getZoom()}x`;
-  glitchValue.textContent = `${getGlitchAmount()}%`;
+  const edit = getSelectedStrikeEdit();
+  glitchValue.textContent = `${edit ? edit.amount : getGlitchAmount()}%`;
 }
 
 function renderLog() {
@@ -226,14 +382,19 @@ function renderLog() {
     counts[resource.type] = (counts[resource.type] || 0) + 1;
   }
 
+  const selectedInfo = corruptionInfo && selectedStrikeKey
+    ? corruptionInfo.byStrike.find(item => item.key === selectedStrikeKey)
+    : null;
   const corruptionLines = corruptionInfo && corruptionInfo.error
     ? [`corruption error: ${corruptionInfo.error}`]
     : [
+        `selected strike: ${getSelectedStrikeLabel()}`,
         `signature: ${getSignatureInputText()}`,
-        `signature matches: ${corruptionInfo ? corruptionInfo.matches : 0}`,
-        `corrupt offset: ${corruptionInfo && corruptionInfo.offset >= 0 ? `0x${corruptionInfo.offset.toString(16)}` : "(not found)"}`,
-        `corrupt bytes: ${corruptionInfo ? corruptionInfo.length : 0}`,
-        `mutated bytes: ${corruptionInfo ? corruptionInfo.mutated : 0}`
+        `signature matches: ${selectedInfo ? selectedInfo.matches : 0}`,
+        `corrupt offset: ${selectedInfo && selectedInfo.offset >= 0 ? `0x${selectedInfo.offset.toString(16)}` : "(not found)"}`,
+        `corrupt bytes: ${selectedInfo ? selectedInfo.length : 0}`,
+        `mutated bytes: ${selectedInfo ? selectedInfo.mutated : 0}`,
+        `total mutated: ${corruptionInfo ? corruptionInfo.totalMutated : 0}`
       ];
 
   log.textContent = [
@@ -247,8 +408,7 @@ function renderLog() {
     `sfnt bitmap strikes: ${currentSFNTStrikes.length}`,
     `sfnt skipped: ${currentSFNTErrors.length}`,
     `NFNT bitmap strikes: ${currentNFNTs.length}`,
-    `NFNT skipped: ${currentNFNTErrors.length}`,
-    `glitch seed: 0x${glitchSeed.toString(16).padStart(8, "0")}`
+    `NFNT skipped: ${currentNFNTErrors.length}`
   ].join("\n");
 }
 
@@ -487,8 +647,9 @@ function getSignatureInputText() {
   return signatureInput.value.trim() || "(empty)";
 }
 
-function getSignatureBytes() {
-  return parseHexBytes(signatureInput.value);
+function getSelectedStrikeLabel() {
+  const target = strikeTargets.find(item => item.key === selectedStrikeKey);
+  return target ? target.label : "(none)";
 }
 
 function updateDownloadLink() {
@@ -518,29 +679,46 @@ function makeCorruptedDfontName(fileName) {
   return `${fileName}-corrupted.dfont`;
 }
 
-function corruptDfontBytes(buffer, signature, corruptLength, amount, seed) {
+function corruptDfontBytes(buffer, targets, edits) {
   const bytes = new Uint8Array(buffer.slice(0));
-  const matches = signature.length === 0 ? [] : findSignatureOffsets(bytes, signature);
-  const signatureOffset = matches.length > 0 ? matches[0] : -1;
-  let mutated = 0;
-  let actualLength = 0;
+  const byStrike = [];
+  let totalMutated = 0;
 
-  if (signatureOffset >= 0 && corruptLength > 0 && amount > 0) {
-    const start = signatureOffset + signature.length;
-    actualLength = Math.min(corruptLength, Math.max(0, bytes.length - start));
-    mutated = mutateByteRange(bytes, start, actualLength, amount, seed);
-  } else if (signatureOffset >= 0) {
-    actualLength = Math.min(corruptLength, Math.max(0, bytes.length - signatureOffset - signature.length));
-  }
+  for (const target of targets) {
+    const edit = edits.get(target.key) || createDefaultStrikeEdit();
+    const signature = parseHexBytes(edit.signatureText);
+    const scopeStart = clamp(target.scopeStart, 0, bytes.length);
+    const scopeEnd = clamp(target.scopeEnd, scopeStart, bytes.length);
+    const matches = signature.length === 0 ? [] : findSignatureOffsets(bytes, signature, scopeStart, scopeEnd);
+    const signatureOffset = matches.length > 0 ? matches[0] : -1;
+    let mutated = 0;
+    let actualLength = 0;
 
-  return {
-    buffer: bytes.buffer,
-    info: {
+    if (signatureOffset >= 0 && edit.length > 0 && edit.amount > 0) {
+      const start = signatureOffset + signature.length;
+      actualLength = Math.min(edit.length, Math.max(0, scopeEnd - start));
+      mutated = mutateByteRange(bytes, start, actualLength, edit.amount / 100, edit.seed);
+    } else if (signatureOffset >= 0) {
+      actualLength = Math.min(edit.length, Math.max(0, scopeEnd - signatureOffset - signature.length));
+    }
+
+    totalMutated += mutated;
+    byStrike.push({
+      key: target.key,
+      label: target.label,
       matches: matches.length,
       signatureOffset,
       offset: signatureOffset >= 0 ? signatureOffset + signature.length : -1,
       length: actualLength,
       mutated
+    });
+  }
+
+  return {
+    buffer: bytes.buffer,
+    info: {
+      byStrike,
+      totalMutated
     }
   };
 }
@@ -571,14 +749,16 @@ function mutateByteRange(bytes, start, length, amount, seed) {
   return mutated;
 }
 
-function findSignatureOffsets(bytes, signature) {
+function findSignatureOffsets(bytes, signature, start = 0, end = bytes.length) {
   const offsets = [];
+  const searchStart = clamp(start, 0, bytes.length);
+  const searchEnd = clamp(end, searchStart, bytes.length);
 
-  if (signature.length === 0 || signature.length > bytes.length) {
+  if (signature.length === 0 || signature.length > searchEnd - searchStart) {
     return offsets;
   }
 
-  for (let i = 0; i <= bytes.length - signature.length; i++) {
+  for (let i = searchStart; i <= searchEnd - signature.length; i++) {
     let matches = true;
 
     for (let j = 0; j < signature.length; j++) {
@@ -594,6 +774,10 @@ function findSignatureOffsets(bytes, signature) {
   }
 
   return offsets;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function parseHexBytes(text) {
@@ -676,7 +860,15 @@ function parseResourceFork(buffer) {
         : readPascalString(view, nameListOffset + nameOffset);
       const data = buffer.slice(resourceDataOffset, resourceDataOffset + resourceLength);
 
-      resources.push({ type, id, name, attributes, data });
+      resources.push({
+        type,
+        id,
+        name,
+        attributes,
+        data,
+        absoluteDataOffset: resourceDataOffset,
+        absoluteDataEnd: resourceDataOffset + resourceLength
+      });
     }
   }
 
@@ -756,6 +948,7 @@ function parseBlocTable(view, bloc, bdat) {
     const flags = readU8(view, sizeOffset + 47);
     const glyphs = new Map();
     const imageFormats = new Set();
+    const bitmapRanges = [];
 
     for (let i = 0; i < numberOfIndexSubTables; i++) {
       const arrayOffset = base + indexSubTableArrayOffset + i * 8;
@@ -763,8 +956,15 @@ function parseBlocTable(view, bloc, bdat) {
       const lastGlyphIndex = readU16(view, arrayOffset + 2);
       const additionalOffset = readU32(view, arrayOffset + 4);
       const subtableOffset = base + indexSubTableArrayOffset + additionalOffset;
-      parseIndexSubTable(view, subtableOffset, firstGlyphIndex, lastGlyphIndex, bdat, glyphs, imageFormats);
+      parseIndexSubTable(view, subtableOffset, firstGlyphIndex, lastGlyphIndex, bdat, glyphs, imageFormats, bitmapRanges);
     }
+
+    const dataStart = bitmapRanges.length > 0
+      ? Math.min(...bitmapRanges.map(range => range.start))
+      : Infinity;
+    const dataEnd = bitmapRanges.length > 0
+      ? Math.max(...bitmapRanges.map(range => range.end))
+      : -Infinity;
 
     strikes.push({
       startGlyphIndex,
@@ -774,14 +974,16 @@ function parseBlocTable(view, bloc, bdat) {
       bitDepth,
       flags,
       glyphs,
-      imageFormats: Array.from(imageFormats).sort()
+      imageFormats: Array.from(imageFormats).sort(),
+      dataStart,
+      dataEnd
     });
   }
 
   return strikes;
 }
 
-function parseIndexSubTable(view, subtableOffset, firstGlyphIndex, lastGlyphIndex, bdat, glyphs, imageFormats) {
+function parseIndexSubTable(view, subtableOffset, firstGlyphIndex, lastGlyphIndex, bdat, glyphs, imageFormats, bitmapRanges) {
   const indexFormat = readU16(view, subtableOffset);
   const imageFormat = readU16(view, subtableOffset + 2);
   const imageDataOffset = readU32(view, subtableOffset + 4);
@@ -817,6 +1019,8 @@ function parseIndexSubTable(view, subtableOffset, firstGlyphIndex, lastGlyphInde
     if (glyphOffset + glyphLength > bdat.offset + bdat.length) {
       throw new Error(`Bitmap glyph ${firstGlyphIndex + i} points outside bdat.`);
     }
+
+    bitmapRanges.push({ start: glyphOffset, end: glyphOffset + glyphLength });
 
     try {
       glyphs.set(firstGlyphIndex + i, parseSmallBitmapGlyph(view, glyphOffset, glyphLength));
