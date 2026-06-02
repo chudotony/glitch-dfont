@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>.dfont bitmap glitch lab</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f2ead8;
+      --ink: #15110d;
+      --panel: #fffaf0;
+      --line: #2f2922;
+      --soft-line: #c9bda6;
+      --green: #286653;
+      --red: #a6342f;
+      --blue: #244f83;
+      --muted: #625b50;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(21, 17, 13, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(21, 17, 13, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 12px 12px;
+      color: var(--ink);
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    main {
+      width: 100%;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 28px 0 12px;
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .workspace {
+      min-width: 0;
+    }
+
+    .controls {
+      position: sticky;
+      top: 24px;
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      border: 2px solid var(--line);
+      background: var(--panel);
+      box-shadow: 4px 4px 0 var(--line);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    input[type="file"],
+    input[type="text"],
+    input[type="number"],
+    input[type="range"],
+    button {
+      width: 100%;
+      min-height: 38px;
+      font: inherit;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      padding: 0 10px;
+      border: 2px solid var(--line);
+      background: white;
+      color: var(--ink);
+    }
+
+    input[type="range"] {
+      accent-color: var(--green);
+    }
+
+    button {
+      border: 2px solid var(--line);
+      background: var(--green);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+      text-transform: uppercase;
+      box-shadow: 2px 2px 0 var(--line);
+    }
+
+    button:active {
+      transform: translate(2px, 2px);
+      box-shadow: none;
+    }
+
+    .readout {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    pre {
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      border: 2px solid var(--line);
+      background: #fffdf7;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    #log {
+      max-height: 128px;
+    }
+
+    .resource {
+      margin: 18px 0 28px;
+      padding: 14px;
+      border: 2px solid var(--line);
+      background: var(--panel);
+      box-shadow: 4px 4px 0 var(--line);
+    }
+
+    .resource-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 12px;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    .badge {
+      color: white;
+      background: var(--blue);
+      padding: 3px 7px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .canvas-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .frame {
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .frame-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    canvas {
+      display: block;
+      border: 2px solid var(--line);
+      background: white;
+      image-rendering: pixelated;
+      max-width: none;
+    }
+
+    a.download {
+      display: inline-flex;
+      color: var(--red);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .download-row {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .notice {
+      padding: 14px;
+      border: 2px solid var(--line);
+      background: #fffdf7;
+    }
+
+    .error {
+      color: var(--red);
+    }
+
+    @media (max-width: 900px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+        order: -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>.dfont bitmap glitch lab</h1>
+
+    <div class="app-layout">
+      <section class="workspace">
+        <h2>Output</h2>
+        <div id="output" class="notice">Waiting for .dfont bitmap resources.</div>
+      </section>
+
+      <aside class="controls">
+        <label>
+          Upload .dfont
+          <input id="fileInput" type="file" accept=".dfont,.rsrc,application/octet-stream" />
+        </label>
+
+        <label>
+          Text
+          <input id="previewText" type="text" value="ABC abc 012" />
+        </label>
+
+        <label>
+          Signature
+          <input id="signatureInput" type="text" value="00 01 01 00 01" />
+        </label>
+
+        <label>
+          Length
+          <input id="corruptLengthInput" type="number" min="0" max="4096" step="1" value="96" />
+        </label>
+
+        <label>
+          Zoom <span id="zoomValue" class="readout">8x</span>
+          <input id="zoomInput" type="range" min="2" max="18" value="8" />
+        </label>
+
+        <label>
+          Mutation <span id="glitchValue" class="readout">34%</span>
+          <input id="glitchInput" type="range" min="0" max="100" value="34" />
+        </label>
+
+        <button id="rerollButton" type="button">Reroll</button>
+
+        <div class="download-row">
+          <a id="downloadDfont" class="download" href="#" download hidden>Download corrupted .dfont</a>
+        </div>
+
+        <label>
+          Resource fork
+          <pre id="log">Upload a .dfont file.</pre>
+        </label>
+      </aside>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
