@@ -1,664 +1,752 @@
+/* =======================================================
+   app.js — UI layer for the .dfont bitmap glitch lab
+   - resolution slider (one milestone per strike)
+   - cap height decoupled from resolution
+   - two horizontal screens: phrase + full typeface specimen
+   - glitch controls live in the advanced popover (all strikes)
+======================================================= */
+
+/* ---------- element refs ---------- */
 const fileInput = document.getElementById("fileInput");
+const fileName = document.getElementById("fileName");
 const previewTextInput = document.getElementById("previewText");
-const strikeSelect = document.getElementById("strikeSelect");
+const resInput = document.getElementById("resInput");
+const resTicks = document.getElementById("resTicks");
+const resReadout = document.getElementById("resReadout");
+const phraseHeightInput = document.getElementById("phraseHeightInput");
+const phraseHeightReadout = document.getElementById("phraseHeightReadout");
+const typeHeightInput = document.getElementById("typeHeightInput");
+const typeHeightReadout = document.getElementById("typeHeightReadout");
+const phraseBody = document.getElementById("phraseBody");
+const typeBody = document.getElementById("typeBody");
+
+const advToggle = document.getElementById("advToggle");
+const advPanel = document.getElementById("advPanel");
 const signatureInput = document.getElementById("signatureInput");
 const corruptLengthInput = document.getElementById("corruptLengthInput");
-const zoomInput = document.getElementById("zoomInput");
 const glitchInput = document.getElementById("glitchInput");
-const rerollButton = document.getElementById("rerollButton");
-const zoomValue = document.getElementById("zoomValue");
 const glitchValue = document.getElementById("glitchValue");
+const rerollButton = document.getElementById("rerollButton");
+const resetButton = document.getElementById("resetButton");
 const downloadDfont = document.getElementById("downloadDfont");
 const log = document.getElementById("log");
-const output = document.getElementById("output");
 
+const INK = "#15110d";
+const STORE_KEY = "dfont-glitch-lab";
+
+/* default glitch settings — used by Reset */
+const GLITCH_DEFAULTS = Object.freeze({
+  signatureText: "00 01 01 00 01",
+  length: 96,
+  amount: 0,
+  seed: 0x4d4143
+});
+
+/* ---------- state ---------- */
 let currentFile = null;
 let originalBuffer = null;
 let corruptedBuffer = null;
-let corruptedObjectUrl = null;
 let corruptionInfo = null;
-let currentResources = [];
-let currentNFNTs = [];
-let currentNFNTErrors = [];
-let currentSFNTStrikes = [];
-let currentSFNTErrors = [];
-let strikeTargets = [];
-let strikeEdits = new Map();
-let selectedStrikeKey = null;
-let isSyncingStrikeControls = false;
-const defaultStrikeEdit = {
+let corruptedObjectUrl = null;
+
+let strikes = [];                // corrupted descriptors (with capHeight from clean)
+let selectedIndex = 0;
+let phraseHeight = Number(phraseHeightInput.value) || 96;
+let typeHeight = Number(typeHeightInput.value) || 96;
+
+const glitch = {
   signatureText: "00 01 01 00 01",
   length: 96,
-  amount: 34,
+  amount: 0,
   seed: 0x4d4143
 };
 
+restorePrefs();
+
+/* ---------- listeners ---------- */
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
-
-  if (!file) {
-    return;
+  if (file) {
+    await loadDfont(file);
   }
-
-  await loadDfont(file);
 });
 
-previewTextInput.addEventListener("input", renderAll);
+previewTextInput.addEventListener("input", () => {
+  savePrefs();
+  if (strikes.length) {
+    renderPhrase(strikes[selectedIndex]);
+  }
+});
 
-strikeSelect.addEventListener("change", () => {
-  selectedStrikeKey = strikeSelect.value || null;
-  syncControlsFromSelectedStrike();
-  renderAll();
+// Make the phrase preview behave like an editable field: clicking it focuses
+// the text input (and on phones pops the keyboard) so people type right where
+// the glitched letters appear.
+phraseBody.addEventListener("mousedown", event => {
+  if (event.target.closest("a, button")) {
+    return;
+  }
+  event.preventDefault();
+  previewTextInput.focus();
+  const end = previewTextInput.value.length;
+  try { previewTextInput.setSelectionRange(end, end); } catch (_) {}
+});
+previewTextInput.addEventListener("focus", () => phraseBody.classList.add("typing"));
+previewTextInput.addEventListener("blur", () => phraseBody.classList.remove("typing"));
+
+resInput.addEventListener("input", () => {
+  selectedIndex = clamp(Number(resInput.value) || 0, 0, Math.max(0, strikes.length - 1));
+  render();
+});
+
+phraseHeightInput.addEventListener("input", () => {
+  phraseHeight = Number(phraseHeightInput.value) || 96;
+  phraseHeightReadout.textContent = `${phraseHeight} px`;
+  savePrefs();
+  if (strikes.length) {
+    renderPhrase(strikes[selectedIndex]);
+  }
+});
+
+typeHeightInput.addEventListener("input", () => {
+  typeHeight = Number(typeHeightInput.value) || 96;
+  typeHeightReadout.textContent = `${typeHeight} px`;
+  savePrefs();
+  if (strikes.length) {
+    renderTypeface(strikes[selectedIndex]);
+  }
+});
+
+advToggle.addEventListener("click", () => {
+  const open = advPanel.hasAttribute("hidden");
+  advPanel.toggleAttribute("hidden", !open);
+  advToggle.setAttribute("aria-expanded", String(open));
 });
 
 signatureInput.addEventListener("input", () => {
-  updateSelectedStrikeEdit({ signatureText: signatureInput.value });
-  rebuildCorruptedDfont();
+  glitch.signatureText = signatureInput.value;
+  savePrefs();
+  rebuild();
 });
 
 corruptLengthInput.addEventListener("input", () => {
-  updateSelectedStrikeEdit({ length: getCorruptLength() });
-  rebuildCorruptedDfont();
-});
-
-zoomInput.addEventListener("input", () => {
-  updateControlReadouts();
-  renderAll();
+  glitch.length = Math.max(0, Math.floor(Number(corruptLengthInput.value) || 0));
+  savePrefs();
+  rebuild();
 });
 
 glitchInput.addEventListener("input", () => {
-  updateControlReadouts();
-  updateSelectedStrikeEdit({ amount: getGlitchAmount() });
-  rebuildCorruptedDfont();
+  glitch.amount = Number(glitchInput.value) || 0;
+  glitchValue.textContent = `${glitch.amount}%`;
+  savePrefs();
+  rebuild();
 });
 
 rerollButton.addEventListener("click", () => {
-  updateSelectedStrikeEdit({ seed: Math.floor(Math.random() * 0xffffffff) });
-  rebuildCorruptedDfont();
+  glitch.seed = Math.floor(Math.random() * 0xffffffff);
+  rebuild();
 });
 
-updateControlReadouts();
+resetButton.addEventListener("click", () => {
+  glitch.signatureText = GLITCH_DEFAULTS.signatureText;
+  glitch.length = GLITCH_DEFAULTS.length;
+  glitch.amount = GLITCH_DEFAULTS.amount;
+  glitch.seed = GLITCH_DEFAULTS.seed;
 
+  signatureInput.value = glitch.signatureText;
+  corruptLengthInput.value = String(glitch.length);
+  glitchInput.value = String(glitch.amount);
+  glitchValue.textContent = `${glitch.amount}%`;
+
+  savePrefs();
+  rebuild();
+});
+
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (strikes.length) {
+      render();
+    }
+  }, 120);
+});
+
+/* ---------- load + rebuild pipeline ---------- */
 async function loadDfont(file) {
   currentFile = file;
-  originalBuffer = null;
-  corruptedBuffer = null;
-  corruptionInfo = null;
-  resetParsedState();
-  updateDownloadLink();
-  log.textContent = "Reading .dfont...";
-  output.className = "notice";
-  output.textContent = "Parsing resource fork.";
+  fileName.textContent = file.name;
+  log.textContent = "Reading .dfont…";
 
   try {
     originalBuffer = await file.arrayBuffer();
-    discoverStrikeTargets();
-    populateStrikeSelect();
-    rebuildCorruptedDfont();
+    selectedIndex = 0;
+    rebuild();
   } catch (error) {
     console.error(error);
+    originalBuffer = null;
+    showPhraseError("Could not read file", String(error.message || error));
+    typeBody.innerHTML = `<div class="empty"><div>—</div></div>`;
     log.textContent = String(error.stack || error.message || error);
-    output.className = "notice error";
-    output.textContent = "Could not read this file as a .dfont resource fork.";
   }
 }
 
-function discoverStrikeTargets() {
-  strikeTargets = [];
-  strikeEdits = new Map();
-  selectedStrikeKey = null;
+function rebuild() {
+  if (!originalBuffer) {
+    return;
+  }
 
-  const resources = parseResourceFork(originalBuffer);
+  let targets = [];
+  try {
+    targets = discoverStrikeTargets(originalBuffer);
+  } catch (error) {
+    targets = [];
+  }
+
+  const edits = new Map(targets.map(target => [target.key, glitch]));
+
+  try {
+    const result = corruptDfontBytes(originalBuffer, targets, edits);
+    corruptedBuffer = result.buffer;
+    corruptionInfo = result.info;
+  } catch (error) {
+    corruptedBuffer = originalBuffer;
+    corruptionInfo = { byStrike: [], totalMutated: 0, error: String(error.message || error) };
+  }
+
+  const clean = buildDescriptors(originalBuffer);
+  const dirty = buildDescriptors(corruptedBuffer);
+  strikes = dirty.strikes;
+
+  // Cap height is measured from the CLEAN strike so the on-screen letter size
+  // stays put while the user dials in the glitch.
+  strikes.forEach((strike, index) => {
+    const reference = clean.strikes[index] || strike;
+    // Keep a handle on the clean descriptor so the typeface specimen can pin
+    // every glyph to its original top-left anchor while drawing glitched pixels.
+    strike.clean = reference;
+    strike.capHeight = measureCapHeight(reference);
+  });
+
+  selectedIndex = clamp(selectedIndex, 0, Math.max(0, strikes.length - 1));
+
+  setupResSlider();
+  updateDownloadLink();
+  updateLog();
+
+  if (!strikes.length) {
+    const message = dirty.error
+      ? String(dirty.error.message || dirty.error)
+      : "No NFNT or sfnt bitmap strikes found in this .dfont.";
+    showPhraseError("No drawable strikes", message);
+    typeBody.innerHTML = `<div class="empty"><div>—</div></div>`;
+    return;
+  }
+
+  render();
+}
+
+/* ---------- descriptors ---------- */
+function buildDescriptors(buffer) {
+  let resources;
+  try {
+    resources = parseResourceFork(buffer);
+  } catch (error) {
+    return { strikes: [], error };
+  }
+
+  const out = [];
+
+  for (const resource of resources.filter(item => item.type === "sfnt")) {
+    let parsed;
+    try {
+      parsed = parseBitmapSFNT(resource.data);
+    } catch (error) {
+      continue;
+    }
+    parsed.strikes.forEach((strike, index) => {
+      out.push(makeSFNTDescriptor(resource, parsed, strike, index));
+    });
+  }
+
+  for (const resource of resources.filter(item => item.type === "NFNT")) {
+    let nfnt;
+    try {
+      nfnt = parseNFNT(resource.data);
+    } catch (error) {
+      continue;
+    }
+    out.push(makeNFNTDescriptor(resource, nfnt));
+  }
+
+  out.sort((a, b) => a.pixelSize - b.pixelSize || a.label.localeCompare(b.label));
+  return { strikes: out, error: null };
+}
+
+function makeSFNTDescriptor(resource, parsed, strike, index) {
+  const getCell = charCode => {
+    const glyphID = parsed.charToGlyph.get(charCode);
+    if (glyphID === undefined) {
+      return null;
+    }
+    const glyph = strike.glyphs.get(glyphID);
+    if (!glyph) {
+      return null;
+    }
+    return {
+      width: glyph.width,
+      height: glyph.height,
+      bearingX: glyph.bearingX,
+      bearingY: glyph.bearingY,
+      advance: Math.max(1, glyph.advance),
+      pixel: (x, y) => getSFNTBitmapGlyphPixel(glyph, x, y)
+    };
+  };
+
+  const charCodes = [];
+  for (const charCode of parsed.charToGlyph.keys()) {
+    const cell = getCell(charCode);
+    if (cell && cell.width > 0 && cell.height > 0) {
+      charCodes.push(charCode);
+    }
+  }
+
+  return {
+    kind: "sfnt",
+    id: resource.id,
+    label: `sfnt ${resource.id}`,
+    pixelSize: strike.ppemY || strike.ppemX || 1,
+    glyphCount: charCodes.length,
+    charCodes,
+    getCell,
+    capHeight: 0
+  };
+}
+
+function makeNFNTDescriptor(resource, nfnt) {
+  const getCell = charCode => {
+    const glyph = getGlyphInfo(nfnt, charCode);
+    if (!glyph) {
+      return null;
+    }
+    return {
+      width: glyph.width,
+      height: nfnt.fRectHeight,
+      bearingX: glyph.offset,
+      bearingY: nfnt.ascent,
+      advance: Math.max(1, glyph.advance),
+      pixel: (x, y) => getNFNTPixel(nfnt, glyph.sourceX + x, y)
+    };
+  };
+
+  const charCodes = [];
+  for (let charCode = nfnt.firstChar; charCode <= nfnt.lastChar; charCode++) {
+    const cell = getCell(charCode);
+    if (cell && cell.width > 0) {
+      charCodes.push(charCode);
+    }
+  }
+
+  return {
+    kind: "NFNT",
+    id: resource.id,
+    label: `NFNT ${resource.id}`,
+    pixelSize: nfnt.fRectHeight || 1,
+    glyphCount: charCodes.length,
+    charCodes,
+    getCell,
+    capHeight: 0
+  };
+}
+
+function measureCapHeight(descriptor) {
+  for (const char of "HEBXIOMND") {
+    const cell = descriptor.getCell(char.charCodeAt(0));
+    if (cell && cell.width > 0 && cell.height > 0) {
+      let top = Infinity;
+      let bottom = -Infinity;
+      for (let y = 0; y < cell.height; y++) {
+        for (let x = 0; x < cell.width; x++) {
+          if (cell.pixel(x, y)) {
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+          }
+        }
+      }
+      if (bottom >= top) {
+        return bottom - top + 1;
+      }
+    }
+  }
+  return Math.max(1, Math.round(descriptor.pixelSize * 0.7));
+}
+
+function discoverStrikeTargets(buffer) {
+  const targets = [];
+  const resources = parseResourceFork(buffer);
 
   for (const resource of resources.filter(item => item.type === "sfnt")) {
     try {
       const parsed = parseBitmapSFNT(resource.data);
-
       parsed.strikes.forEach((strike, index) => {
         if (!Number.isFinite(strike.dataStart) || !Number.isFinite(strike.dataEnd) || strike.dataEnd <= strike.dataStart) {
           return;
         }
-
-        const key = `sfnt:${resource.id}:${index}`;
-        const target = {
-          key,
+        targets.push({
+          key: `sfnt:${resource.id}:${index}`,
           type: "sfnt",
           label: `sfnt ${resource.id} / ${strike.ppemY}px`,
           resourceId: resource.id,
           scopeStart: resource.absoluteDataOffset + strike.dataStart,
           scopeEnd: resource.absoluteDataOffset + strike.dataEnd
-        };
-
-        strikeTargets.push(target);
-        strikeEdits.set(key, createDefaultStrikeEdit());
+        });
       });
     } catch (error) {
-      // Unsupported sfnt resources are reported after corrupted parsing.
+      /* unsupported sfnt — skip */
     }
   }
 
   for (const resource of resources.filter(item => item.type === "NFNT")) {
     try {
       const nfnt = parseNFNT(resource.data);
-      const key = `NFNT:${resource.id}`;
-      const target = {
-        key,
+      targets.push({
+        key: `NFNT:${resource.id}`,
         type: "NFNT",
         label: `NFNT ${resource.id} / ${nfnt.fRectHeight}px`,
         resourceId: resource.id,
         scopeStart: resource.absoluteDataOffset + nfnt.bitImageOffset,
         scopeEnd: resource.absoluteDataOffset + nfnt.bitImageOffset + nfnt.bitImageBytes
-      };
-
-      strikeTargets.push(target);
-      strikeEdits.set(key, createDefaultStrikeEdit());
+      });
     } catch (error) {
-      // Dummy NFNT records are reported after corrupted parsing.
+      /* dummy NFNT — skip */
     }
   }
 
-  selectedStrikeKey = strikeTargets[0] ? strikeTargets[0].key : null;
+  return targets;
 }
 
-function populateStrikeSelect() {
-  strikeSelect.innerHTML = "";
+/* ---------- resolution slider ---------- */
+function setupResSlider() {
+  const count = strikes.length;
 
-  if (strikeTargets.length === 0) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "No editable strikes";
-    strikeSelect.appendChild(option);
-    strikeSelect.disabled = true;
-    syncControlsFromSelectedStrike();
+  if (count <= 1) {
+    resInput.min = 0;
+    resInput.max = 0;
+    resInput.value = 0;
+    resInput.disabled = true;
+    resTicks.classList.add("disabled");
+  } else {
+    resInput.min = 0;
+    resInput.max = count - 1;
+    resInput.step = 1;
+    resInput.value = selectedIndex;
+    resInput.disabled = false;
+    resTicks.classList.remove("disabled");
+  }
+
+  resTicks.innerHTML = "";
+  strikes.forEach((strike, index) => {
+    const span = document.createElement("span");
+    span.textContent = String(strike.pixelSize);
+    span.classList.toggle("on", index === selectedIndex);
+    resTicks.appendChild(span);
+  });
+
+  if (count === 1) {
+    const note = document.createElement("span");
+    note.textContent = "single strike";
+    note.style.opacity = "0.7";
+    resTicks.appendChild(note);
+  }
+
+  updateResReadout();
+}
+
+function updateResReadout() {
+  const strike = strikes[selectedIndex];
+  resReadout.textContent = strike
+    ? `${strike.pixelSize}px · ${strike.glyphCount} glyphs`
+    : "—";
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  if (!strikes.length) {
+    return;
+  }
+  selectedIndex = clamp(selectedIndex, 0, strikes.length - 1);
+  resInput.value = selectedIndex;
+
+  const strike = strikes[selectedIndex];
+  renderPhrase(strike);
+  renderTypeface(strike);
+
+  [...resTicks.children].forEach((el, index) => el.classList.toggle("on", index === selectedIndex));
+  updateResReadout();
+}
+
+function scaleFor(strike, height) {
+  return height / Math.max(1, strike.capHeight);
+}
+
+function innerWidth(bodyEl) {
+  return Math.max(40, bodyEl.clientWidth - 44);
+}
+
+function renderPhrase(strike) {
+  const text = previewTextInput.value;
+  const hasText = text.length > 0;
+  const codes = Array.from(hasText ? text : " ", ch => ch.codePointAt(0));
+  const scale = scaleFor(strike, phraseHeight);
+  const maxNative = Math.max(8, Math.floor(innerWidth(phraseBody) / scale));
+  const run = drawRun(strike, codes, maxNative, 0);
+
+  phraseBody.innerHTML = "";
+  const stack = document.createElement("div");
+  stack.className = "phrase-stack";
+
+  const line = document.createElement("div");
+  line.className = "phrase-line";
+  if (hasText) {
+    styleCanvas(run, scale);
+    line.appendChild(run.canvas);
+  }
+
+  // Blinking caret so the preview reads as an editable field — typing lands
+  // right where the glitched letters appear.
+  const caret = document.createElement("span");
+  caret.className = "phrase-caret";
+  caret.style.height = `${phraseHeight}px`;
+  line.appendChild(caret);
+  stack.appendChild(line);
+
+  if (!hasText) {
+    const hint = document.createElement("div");
+    hint.className = "phrase-hint";
+    hint.textContent = "type here";
+    stack.appendChild(hint);
+  }
+
+  phraseBody.appendChild(stack);
+}
+
+function renderTypeface(strike) {
+  const sections = buildTypefaceSections(strike);
+  typeBody.innerHTML = "";
+
+  if (!sections.length) {
+    typeBody.innerHTML = `<div class="empty"><div>This strike has no drawable glyphs.</div></div>`;
     return;
   }
 
-  for (const target of strikeTargets) {
-    const option = document.createElement("option");
-    option.value = target.key;
-    option.textContent = target.label;
-    strikeSelect.appendChild(option);
-  }
+  // Typeface specimen: the CLEAN letters all rest on one shared baseline, and
+  // that baseline/pen point is each glyph's fixed coordinate origin. Glitched
+  // pixels are drawn from that origin; anything past the slot shows as outliers.
+  const layoutStrike = strike.clean || strike;
+  const scale = scaleFor(strike, typeHeight);
+  const maxNative = Math.max(8, Math.floor(innerWidth(typeBody) / scale));
+  const extraGap = Math.max(1, Math.round(layoutStrike.pixelSize * 0.28));
 
-  strikeSelect.disabled = false;
-  strikeSelect.value = selectedStrikeKey;
-  syncControlsFromSelectedStrike();
+  for (const section of sections) {
+    const wrap = document.createElement("div");
+    wrap.className = "spec-section";
+
+    const label = document.createElement("div");
+    label.className = "spec-label";
+    const name = document.createElement("span");
+    name.textContent = section.name;
+    const count = document.createElement("span");
+    count.className = "count";
+    count.textContent = String(section.codes.length);
+    label.append(name, count);
+
+    const run = drawRun(strike, section.codes, maxNative, extraGap, { layoutStrike, growToFit: true, centerLines: true });
+    styleCanvas(run, scale);
+
+    wrap.append(label, run.canvas);
+    typeBody.appendChild(wrap);
+  }
 }
 
-function rebuildCorruptedDfont() {
-  resetParsedState();
-  corruptedBuffer = null;
-  corruptionInfo = null;
+function buildTypefaceSections(strike) {
+  const set = new Set(strike.charCodes);
+  const has = code => set.has(code);
+  const isLatin = code => (code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a);
 
-  if (!currentFile || !originalBuffer) {
-    return;
-  }
+  const latin = [];
+  for (let code = 0x41; code <= 0x5a; code++) if (has(code)) latin.push(code);
+  for (let code = 0x61; code <= 0x7a; code++) if (has(code)) latin.push(code);
 
-  try {
-    const result = corruptDfontBytes(originalBuffer, strikeTargets, strikeEdits);
-    corruptedBuffer = result.buffer;
-    corruptionInfo = result.info;
-    currentResources = parseResourceFork(corruptedBuffer);
-
-    for (const resource of currentResources.filter(item => item.type === "NFNT")) {
-      try {
-        currentNFNTs.push({ resource, nfnt: parseNFNT(resource.data) });
-      } catch (error) {
-        currentNFNTErrors.push({ resource, error });
-      }
+  const punctuation = [];
+  for (let code = 0x21; code <= 0x7e; code++) {
+    if (has(code) && !isLatin(code)) {
+      punctuation.push(code);
     }
+  }
 
-    for (const resource of currentResources.filter(item => item.type === "sfnt")) {
-      try {
-        const parsed = parseBitmapSFNT(resource.data);
-
-        for (const strike of parsed.strikes) {
-          currentSFNTStrikes.push({ resource, parsed, strike });
-        }
-      } catch (error) {
-        currentSFNTErrors.push({ resource, error });
-      }
+  const other = [];
+  for (const code of [...set].sort((a, b) => a - b)) {
+    if (code === 0x20 || (code >= 0x21 && code <= 0x7e)) {
+      continue;
     }
-
-    updateDownloadLink();
-    renderAll();
-  } catch (error) {
-    console.error(error);
-    corruptionInfo = { error: String(error.message || error) };
-    updateDownloadLink();
-    renderLog();
-    output.className = "notice error";
-    output.textContent = "Could not corrupt or parse this .dfont with the current settings.";
+    other.push(code);
   }
+
+  const sections = [];
+  if (latin.length) sections.push({ name: "Latin alphabet", codes: latin });
+  if (punctuation.length) sections.push({ name: "Numerals & punctuation", codes: punctuation });
+  if (other.length) sections.push({ name: "Other characters", codes: other });
+  return sections;
 }
 
-function resetParsedState() {
-  currentResources = [];
-  currentNFNTs = [];
-  currentNFNTErrors = [];
-  currentSFNTStrikes = [];
-  currentSFNTErrors = [];
-}
+/* Lay glyphs out at native (1×) resolution; the canvas is then CSS-scaled so
+   that the cap height matches the requested height regardless of the strike size.
 
-function createDefaultStrikeEdit() {
-  return { ...defaultStrikeEdit };
-}
+   options.layoutStrike — when supplied, glyph positions, advances, line breaks
+     and the ascent/descent box come from THIS strike (e.g. the clean font),
+     while the pixels drawn come from `strike` (the glitched font). This pins
+     each letter to a fixed top-left anchor even as the glitch changes its size.
+   options.growToFit — when true, the canvas is enlarged so glitched pixels that
+     spill past their fixed slot ("outliers") stay visible instead of clipping. */
+function drawRun(strike, codes, maxNativeWidth, extraGap, options = {}) {
+  const layoutStrike = options.layoutStrike || strike;
+  const growToFit = !!options.growToFit;
+  const centerLines = !!options.centerLines;
+  // cellAnchor: pin every glyph's top-left to its slot origin (0,0), ignoring
+  // side bearings / baseline. Used by the typeface specimen so each letter
+  // always starts in the exact same place no matter how it's glitched.
+  const cellAnchor = !!options.cellAnchor;
+  const fallbackGap = Math.max(2, Math.round(layoutStrike.pixelSize * 0.42));
 
-function getSelectedStrikeEdit() {
-  if (!selectedStrikeKey || !strikeEdits.has(selectedStrikeKey)) {
-    return null;
+  let ascent = 0;
+  let descent = 0;
+  let cellHeight = 0;
+  const items = codes.map(code => {
+    const layoutCell = layoutStrike.getCell(code);
+    const pixelCell = strike.getCell(code);
+    if (layoutCell) {
+      ascent = Math.max(ascent, layoutCell.bearingY);
+      descent = Math.max(descent, layoutCell.height - layoutCell.bearingY);
+      cellHeight = Math.max(cellHeight, layoutCell.height);
+    }
+    return { layoutCell, pixelCell };
+  });
+
+  if (ascent <= 0 && descent <= 0) {
+    ascent = layoutStrike.pixelSize;
+    descent = Math.max(0, Math.round(layoutStrike.pixelSize * 0.2));
+  }
+  if (cellHeight <= 0) {
+    cellHeight = ascent + descent;
   }
 
-  return strikeEdits.get(selectedStrikeKey);
-}
-
-function updateSelectedStrikeEdit(patch) {
-  if (isSyncingStrikeControls) {
-    return;
-  }
-
-  const edit = getSelectedStrikeEdit();
-
-  if (!edit) {
-    return;
-  }
-
-  Object.assign(edit, patch);
-}
-
-function syncControlsFromSelectedStrike() {
-  const edit = getSelectedStrikeEdit();
-  isSyncingStrikeControls = true;
-
-  if (!edit) {
-    signatureInput.value = defaultStrikeEdit.signatureText;
-    corruptLengthInput.value = String(defaultStrikeEdit.length);
-    glitchInput.value = String(defaultStrikeEdit.amount);
-    isSyncingStrikeControls = false;
-    updateControlReadouts();
-    return;
-  }
-
-  signatureInput.value = edit.signatureText;
-  corruptLengthInput.value = String(edit.length);
-  glitchInput.value = String(edit.amount);
-  isSyncingStrikeControls = false;
-  updateControlReadouts();
-}
-
-function renderAll() {
-  updateControlReadouts();
-
-  if (!currentFile) {
-    return;
-  }
-
-  renderLog();
-  output.className = "";
-  output.innerHTML = "";
-
-  if (
-    currentNFNTs.length === 0 &&
-    currentNFNTErrors.length === 0 &&
-    currentSFNTStrikes.length === 0 &&
-    currentSFNTErrors.length === 0
-  ) {
-    output.className = "notice";
-    output.textContent = "No NFNT or sfnt bitmap resources found in this .dfont.";
-    return;
-  }
-
-  const textFrames = [];
-  const atlasFrames = [];
-  const errorCards = [];
-
-  for (const item of currentSFNTStrikes) {
-    const textCanvas = document.createElement("canvas");
-    drawSFNTBitmapText(textCanvas, item.strike, item.parsed.charToGlyph, getPreviewText());
-    textFrames.push(createCanvasFrame(
-      `sfnt ${item.resource.id} / ${item.strike.ppemY}px`,
-      textCanvas,
-      `${item.resource.id}-sfnt-corrupted-text.png`
-    ));
-
-    const atlasCanvas = document.createElement("canvas");
-    drawSFNTBitmapAtlas(atlasCanvas, item.strike, item.parsed.glyphToChars);
-    atlasFrames.push(createCanvasFrame(
-      `sfnt ${item.resource.id} / ${item.strike.ppemY}px`,
-      atlasCanvas,
-      `${item.resource.id}-sfnt-corrupted-atlas.png`
-    ));
-  }
-
-  for (const item of currentNFNTs) {
-    const textCanvas = document.createElement("canvas");
-    drawNFNTText(textCanvas, item.nfnt, getPreviewText());
-    textFrames.push(createCanvasFrame(
-      `NFNT ${item.resource.id} / ${item.nfnt.fRectHeight}px`,
-      textCanvas,
-      `${item.resource.id}-corrupted-text.png`
-    ));
-
-    const atlasCanvas = document.createElement("canvas");
-    drawNFNTStrike(atlasCanvas, item.nfnt);
-    atlasFrames.push(createCanvasFrame(
-      `NFNT ${item.resource.id} / ${item.nfnt.fRectHeight}px`,
-      atlasCanvas,
-      `${item.resource.id}-corrupted-strike.png`
-    ));
-  }
-
-  for (const item of currentSFNTErrors) {
-    errorCards.push(renderSFNTErrorCard(item.resource, item.error));
-  }
-
-  for (const item of currentNFNTErrors) {
-    errorCards.push(renderNFNTErrorCard(item.resource, item.error));
-  }
-
-  if (textFrames.length > 0) {
-    output.appendChild(createOutputGroup("Corrupted text images", textFrames));
-  }
-
-  if (atlasFrames.length > 0) {
-    output.appendChild(createOutputGroup("Corrupted strike atlases", atlasFrames));
-  }
-
-  if (errorCards.length > 0) {
-    output.appendChild(createOutputGroup("Skipped resources", errorCards));
-  }
-}
-
-function updateControlReadouts() {
-  zoomValue.textContent = `${getZoom()}x`;
-  const edit = getSelectedStrikeEdit();
-  glitchValue.textContent = `${edit ? edit.amount : getGlitchAmount()}%`;
-}
-
-function renderLog() {
-  const counts = {};
-
-  for (const resource of currentResources) {
-    counts[resource.type] = (counts[resource.type] || 0) + 1;
-  }
-
-  const selectedInfo = corruptionInfo && selectedStrikeKey
-    ? corruptionInfo.byStrike.find(item => item.key === selectedStrikeKey)
-    : null;
-  const corruptionLines = corruptionInfo && corruptionInfo.error
-    ? [`corruption error: ${corruptionInfo.error}`]
-    : [
-        `selected strike: ${getSelectedStrikeLabel()}`,
-        `signature: ${getSignatureInputText()}`,
-        `signature matches: ${selectedInfo ? selectedInfo.matches : 0}`,
-        `corrupt offset: ${selectedInfo && selectedInfo.offset >= 0 ? `0x${selectedInfo.offset.toString(16)}` : "(not found)"}`,
-        `corrupt bytes: ${selectedInfo ? selectedInfo.length : 0}`,
-        `mutated bytes: ${selectedInfo ? selectedInfo.mutated : 0}`,
-        `total mutated: ${corruptionInfo ? corruptionInfo.totalMutated : 0}`
-      ];
-
-  log.textContent = [
-    `file: ${currentFile.name}`,
-    `bytes: ${currentFile.size}`,
-    ...corruptionLines,
-    "",
-    "resources:",
-    ...Object.keys(counts).sort().map(type => `  ${type}: ${counts[type]}`),
-    "",
-    `sfnt bitmap strikes: ${currentSFNTStrikes.length}`,
-    `sfnt skipped: ${currentSFNTErrors.length}`,
-    `NFNT bitmap strikes: ${currentNFNTs.length}`,
-    `NFNT skipped: ${currentNFNTErrors.length}`
-  ].join("\n");
-}
-
-function renderNFNTCard(resource, nfnt) {
-  const card = document.createElement("section");
-  card.className = "resource";
-
-  const head = document.createElement("div");
-  head.className = "resource-head";
-
-  const title = document.createElement("h3");
-  title.textContent = `NFNT resource ${resource.id}`;
-
-  const badge = document.createElement("span");
-  badge.className = "badge";
-  badge.textContent = `${nfnt.fRectHeight}px strike`;
-
-  head.append(title, badge);
-  card.appendChild(head);
-
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  meta.appendChild(createMetaBlock([
-    `firstChar: ${nfnt.firstChar}`,
-    `lastChar: ${nfnt.lastChar}`,
-    `glyphCount: ${nfnt.glyphCount}`,
-    `fRectWidth: ${nfnt.fRectWidth}`,
-    `fRectHeight: ${nfnt.fRectHeight}`,
-    `ascent: ${nfnt.ascent}`,
-    `descent: ${nfnt.descent}`,
-    `rowWords: ${nfnt.rowWords}`,
-    `strikeWidth: ${nfnt.strikeWidth}`
-  ]));
-  meta.appendChild(createMetaBlock([
-    "bitmap bytes:",
-    hexBytes(resource.data, nfnt.bitImageOffset, Math.min(48, nfnt.bitImageBytes))
-  ]));
-  card.appendChild(meta);
-
-  const grid = document.createElement("div");
-  grid.className = "canvas-grid";
-
-  const cleanTextCanvas = document.createElement("canvas");
-  drawNFNTText(cleanTextCanvas, nfnt, getPreviewText());
-  appendCanvasFrame(grid, "corrupted text image", cleanTextCanvas, `${resource.id}-corrupted-text.png`);
-
-  const strikeCanvas = document.createElement("canvas");
-  drawNFNTStrike(strikeCanvas, nfnt);
-  appendCanvasFrame(grid, "corrupted strike atlas", strikeCanvas, `${resource.id}-corrupted-strike.png`);
-
-  card.appendChild(grid);
-  return card;
-}
-
-function renderSFNTStrikeCard(resource, parsed, strike) {
-  const card = document.createElement("section");
-  card.className = "resource";
-
-  const head = document.createElement("div");
-  head.className = "resource-head";
-
-  const title = document.createElement("h3");
-  title.textContent = `sfnt bitmap resource ${resource.id}`;
-
-  const badge = document.createElement("span");
-  badge.className = "badge";
-  badge.textContent = `${strike.ppemY}px strike`;
-
-  head.append(title, badge);
-  card.appendChild(head);
-
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  meta.appendChild(createMetaBlock([
-    `scalerType: ${parsed.scalerType}`,
-    `tables: ${parsed.tables.map(table => table.tag).join(", ")}`,
-    `glyph range: ${strike.startGlyphIndex}-${strike.endGlyphIndex}`,
-    `glyphs decoded: ${strike.glyphs.size}`,
-    `ppemX: ${strike.ppemX}`,
-    `ppemY: ${strike.ppemY}`,
-    `bitDepth: ${strike.bitDepth}`,
-    `imageFormat: ${strike.imageFormats.join(", ")}`
-  ]));
-  meta.appendChild(createMetaBlock([
-    "bdat bytes:",
-    hexBytes(parsed.buffer, parsed.bdat.offset, Math.min(64, parsed.bdat.length))
-  ]));
-  card.appendChild(meta);
-
-  const grid = document.createElement("div");
-  grid.className = "canvas-grid";
-
-  const cleanTextCanvas = document.createElement("canvas");
-  drawSFNTBitmapText(cleanTextCanvas, strike, parsed.charToGlyph, getPreviewText());
-  appendCanvasFrame(grid, "corrupted text image", cleanTextCanvas, `${resource.id}-sfnt-corrupted-text.png`);
-
-  const atlasCanvas = document.createElement("canvas");
-  drawSFNTBitmapAtlas(atlasCanvas, strike, parsed.glyphToChars);
-  appendCanvasFrame(grid, "corrupted strike atlas", atlasCanvas, `${resource.id}-sfnt-corrupted-atlas.png`);
-
-  card.appendChild(grid);
-  return card;
-}
-
-function renderNFNTErrorCard(resource, error) {
-  const card = document.createElement("section");
-  card.className = "resource";
-
-  const head = document.createElement("div");
-  head.className = "resource-head";
-
-  const title = document.createElement("h3");
-  title.textContent = `NFNT resource ${resource.id}`;
-
-  const badge = document.createElement("span");
-  badge.className = "badge";
-  badge.textContent = "skipped";
-
-  head.append(title, badge);
-  card.appendChild(head);
-  card.appendChild(createMetaBlock([
-    "This NFNT resource did not contain drawable bitmap rows.",
-    String(error.message || error)
-  ]));
-
-  return card;
-}
-
-function renderSFNTErrorCard(resource, error) {
-  const card = document.createElement("section");
-  card.className = "resource";
-
-  const head = document.createElement("div");
-  head.className = "resource-head";
-
-  const title = document.createElement("h3");
-  title.textContent = `sfnt resource ${resource.id}`;
-
-  const badge = document.createElement("span");
-  badge.className = "badge";
-  badge.textContent = "skipped";
-
-  head.append(title, badge);
-  card.appendChild(head);
-  card.appendChild(createMetaBlock([
-    "This sfnt resource did not contain a supported bitmap strike.",
-    String(error.message || error)
-  ]));
-
-  return card;
-}
-
-function createMetaBlock(lines) {
-  const block = document.createElement("pre");
-  block.textContent = lines.join("\n");
-  return block;
-}
-
-function createOutputGroup(title, items) {
-  const section = document.createElement("section");
-  section.className = "resource";
-
-  const head = document.createElement("div");
-  head.className = "resource-head";
-
-  const heading = document.createElement("h3");
-  heading.textContent = title;
-
-  const badge = document.createElement("span");
-  badge.className = "badge";
-  badge.textContent = `${items.length}`;
-
-  const grid = document.createElement("div");
-  grid.className = "canvas-grid";
+  const placements = [];
+  const lineWidths = [];
+  let penX = 0;
+  let line = 0;
+  let lineMaxWidth = 0;
 
   for (const item of items) {
-    grid.appendChild(item);
+    const layoutCell = item.layoutCell;
+    const advance = (layoutCell ? layoutCell.advance : fallbackGap) + extraGap;
+    if (penX > 0 && penX + advance > maxNativeWidth) {
+      line += 1;
+      penX = 0;
+    }
+    placements.push({ ...item, x: penX, line });
+    // Drop the trailing inter-glyph gap when measuring a line's true ink width.
+    // In cellAnchor mode glyphs start at the slot origin, so side bearings are
+    // not part of the width.
+    let layoutWidth;
+    if (cellAnchor) {
+      layoutWidth = layoutCell ? layoutCell.width : advance;
+    } else {
+      layoutWidth = layoutCell ? layoutCell.bearingX + layoutCell.width : advance;
+    }
+    lineWidths[line] = penX + Math.max(layoutWidth, 0);
+    penX += advance;
+    lineMaxWidth = Math.max(lineMaxWidth, penX);
   }
 
-  head.append(heading, badge);
-  section.append(head, grid);
-  return section;
+  const lineCount = line + 1;
+  const lineGap = Math.max(1, Math.round(layoutStrike.pixelSize * 0.4));
+  const lineHeight = (cellAnchor ? cellHeight : ascent + descent) + lineGap;
+  // The "frame": canvas size implied purely by the (clean) layout.
+  const frameW = Math.max(1, Math.min(maxNativeWidth, Math.ceil(lineMaxWidth) + 1));
+  const frameH = Math.max(1, lineCount * lineHeight);
+
+  // Center each row within the frame (offsets come from the CLEAN line widths,
+  // so they stay put as the glitch changes glyph sizes).
+  const lineOffset = lineWidths.map(width =>
+    centerLines ? Math.max(0, Math.round((frameW - 1 - width) / 2)) : 0
+  );
+
+  // Resolve each glyph's fixed top-left anchor (from the layout cell) and the
+  // extent of its glitched pixels.
+  let boundsW = frameW;
+  let boundsH = frameH;
+  for (const placement of placements) {
+    const pixelCell = placement.pixelCell;
+    if (!pixelCell) {
+      continue;
+    }
+    const anchorCell = placement.layoutCell || pixelCell;
+    if (cellAnchor) {
+      // Every glyph starts at its slot's top-left corner (0,0).
+      placement.destX = placement.x + (lineOffset[placement.line] || 0);
+      placement.destY = placement.line * lineHeight;
+    } else {
+      const baseline = placement.line * lineHeight + ascent;
+      placement.destX = Math.round(placement.x + anchorCell.bearingX) + (lineOffset[placement.line] || 0);
+      placement.destY = baseline - anchorCell.bearingY;
+    }
+    boundsW = Math.max(boundsW, placement.destX + pixelCell.width);
+    boundsH = Math.max(boundsH, placement.destY + pixelCell.height);
+  }
+
+  const nativeW = growToFit ? boundsW : frameW;
+  const nativeH = growToFit ? boundsH : frameH;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = nativeW;
+  canvas.height = nativeH;
+  canvas.className = "render-canvas";
+
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = INK;
+
+  for (const placement of placements) {
+    const cell = placement.pixelCell;
+    if (!cell) {
+      continue;
+    }
+    const destX = placement.destX;
+    const destY = placement.destY;
+    for (let y = 0; y < cell.height; y++) {
+      for (let x = 0; x < cell.width; x++) {
+        if (cell.pixel(x, y)) {
+          ctx.fillRect(destX + x, destY + y, 1, 1);
+        }
+      }
+    }
+  }
+
+  return { canvas, nativeW, nativeH };
 }
 
-function createCanvasFrame(title, canvas, fileName) {
-  const frame = document.createElement("div");
-  frame.className = "frame";
-
-  const titleRow = document.createElement("div");
-  titleRow.className = "frame-title";
-
-  const label = document.createElement("span");
-  label.textContent = title;
-
-  const download = document.createElement("a");
-  download.className = "download";
-  download.href = canvas.toDataURL("image/png");
-  download.download = fileName;
-  download.textContent = "PNG";
-
-  titleRow.append(label, download);
-  frame.append(titleRow, canvas);
-  applyZoom(canvas);
-  return frame;
+function styleCanvas(run, scale) {
+  run.canvas.style.width = `${run.nativeW * scale}px`;
+  run.canvas.style.height = `${run.nativeH * scale}px`;
 }
 
-function appendCanvasFrame(parent, title, canvas, fileName) {
-  const frame = createCanvasFrame(title, canvas, fileName);
-  parent.appendChild(frame);
-  return frame;
-}
-
-function applyZoom(canvas) {
-  const zoom = getZoom();
-  canvas.style.width = `${canvas.width * zoom}px`;
-  canvas.style.height = `${canvas.height * zoom}px`;
-}
-
-function getPreviewText() {
-  return previewTextInput.value || " ";
-}
-
-function getZoom() {
-  return Number(zoomInput.value) || 8;
-}
-
-function getGlitchAmount() {
-  return Number(glitchInput.value) || 0;
-}
-
-function getCorruptLength() {
-  return Math.max(0, Math.floor(Number(corruptLengthInput.value) || 0));
-}
-
-function getSignatureInputText() {
-  return signatureInput.value.trim() || "(empty)";
-}
-
-function getSelectedStrikeLabel() {
-  const target = strikeTargets.find(item => item.key === selectedStrikeKey);
-  return target ? target.label : "(none)";
-}
-
+/* ---------- download + log ---------- */
 function updateDownloadLink() {
   if (corruptedObjectUrl) {
     URL.revokeObjectURL(corruptedObjectUrl);
     corruptedObjectUrl = null;
   }
 
-  if (!corruptedBuffer || !currentFile) {
+  if (!corruptedBuffer || !currentFile || !glitch.amount) {
     downloadDfont.hidden = true;
     downloadDfont.removeAttribute("href");
     return;
@@ -671,851 +759,106 @@ function updateDownloadLink() {
   downloadDfont.hidden = false;
 }
 
-function makeCorruptedDfontName(fileName) {
-  if (/\.dfont$/i.test(fileName)) {
-    return fileName.replace(/\.dfont$/i, "-corrupted.dfont");
+function makeCorruptedDfontName(name) {
+  if (/\.dfont$/i.test(name)) {
+    return name.replace(/\.dfont$/i, "-glitched.dfont");
   }
-
-  return `${fileName}-corrupted.dfont`;
+  return `${name}-glitched.dfont`;
 }
 
-function corruptDfontBytes(buffer, targets, edits) {
-  const bytes = new Uint8Array(buffer.slice(0));
-  const byStrike = [];
-  let totalMutated = 0;
-
-  for (const target of targets) {
-    const edit = edits.get(target.key) || createDefaultStrikeEdit();
-    const signature = parseHexBytes(edit.signatureText);
-    const scopeStart = clamp(target.scopeStart, 0, bytes.length);
-    const scopeEnd = clamp(target.scopeEnd, scopeStart, bytes.length);
-    const matches = signature.length === 0 ? [] : findSignatureOffsets(bytes, signature, scopeStart, scopeEnd);
-    const signatureOffset = matches.length > 0 ? matches[0] : -1;
-    let mutated = 0;
-    let actualLength = 0;
-
-    if (signatureOffset >= 0 && edit.length > 0 && edit.amount > 0) {
-      const start = signatureOffset + signature.length;
-      actualLength = Math.min(edit.length, Math.max(0, scopeEnd - start));
-      mutated = mutateByteRange(bytes, start, actualLength, edit.amount / 100, edit.seed);
-    } else if (signatureOffset >= 0) {
-      actualLength = Math.min(edit.length, Math.max(0, scopeEnd - signatureOffset - signature.length));
-    }
-
-    totalMutated += mutated;
-    byStrike.push({
-      key: target.key,
-      label: target.label,
-      matches: matches.length,
-      signatureOffset,
-      offset: signatureOffset >= 0 ? signatureOffset + signature.length : -1,
-      length: actualLength,
-      mutated
-    });
+function updateLog() {
+  if (!currentFile) {
+    return;
   }
 
-  return {
-    buffer: bytes.buffer,
-    info: {
-      byStrike,
-      totalMutated
-    }
-  };
+  const lines = [
+    `file: ${currentFile.name}`,
+    `bytes: ${currentFile.size}`,
+    `strikes: ${strikes.length}`,
+    `selected: ${strikes[selectedIndex] ? strikes[selectedIndex].label + " (" + strikes[selectedIndex].pixelSize + "px)" : "—"}`,
+    `cap height: text ${phraseHeight}px / typeface ${typeHeight}px`,
+    ""
+  ];
+
+  if (corruptionInfo && corruptionInfo.error) {
+    lines.push(`corruption error: ${corruptionInfo.error}`);
+  } else if (corruptionInfo) {
+    lines.push(`mutation: ${glitch.amount}%`);
+    lines.push(`signature: ${glitch.signatureText.trim() || "(empty)"}`);
+    lines.push(`total mutated bytes: ${corruptionInfo.totalMutated}`);
+    lines.push(`seed: 0x${(glitch.seed >>> 0).toString(16)}`);
+  }
+
+  log.textContent = lines.join("\n");
 }
 
-function mutateByteRange(bytes, start, length, amount, seed) {
-  const random = mulberry32(seed);
-  let mutated = 0;
-
-  for (let i = 0; i < length; i++) {
-    if (random() > amount) {
-      continue;
-    }
-
-    const offset = start + i;
-    const mode = Math.floor(random() * 3);
-
-    if (mode === 0) {
-      bytes[offset] ^= 1 << Math.floor(random() * 8);
-    } else if (mode === 1) {
-      bytes[offset] = Math.floor(random() * 256);
-    } else {
-      bytes[offset] = (bytes[offset] + Math.floor(random() * 65) - 32) & 0xff;
-    }
-
-    mutated += 1;
-  }
-
-  return mutated;
+/* ---------- helpers ---------- */
+function showPhraseError(title, detail) {
+  phraseBody.innerHTML =
+    `<div class="empty error"><div><strong>${escapeHtml(title)}</strong><br />${escapeHtml(detail)}</div></div>`;
 }
 
-function findSignatureOffsets(bytes, signature, start = 0, end = bytes.length) {
-  const offsets = [];
-  const searchStart = clamp(start, 0, bytes.length);
-  const searchEnd = clamp(end, searchStart, bytes.length);
-
-  if (signature.length === 0 || signature.length > searchEnd - searchStart) {
-    return offsets;
-  }
-
-  for (let i = searchStart; i <= searchEnd - signature.length; i++) {
-    let matches = true;
-
-    for (let j = 0; j < signature.length; j++) {
-      if (bytes[i + j] !== signature[j]) {
-        matches = false;
-        break;
-      }
-    }
-
-    if (matches) {
-      offsets.push(i);
-    }
-  }
-
-  return offsets;
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[ch]);
 }
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function parseHexBytes(text) {
-  const normalized = text.replace(/0x/gi, "").trim();
-
-  if (normalized.length === 0) {
-    return [];
-  }
-
-  if (/[^0-9a-fA-F\s,;:_-]/.test(normalized)) {
-    throw new Error("Signature must be hexadecimal bytes.");
-  }
-
-  const hex = normalized.replace(/[\s,;:_-]+/g, "");
-
-  if (hex.length % 2 !== 0) {
-    throw new Error("Signature has an odd number of hex digits.");
-  }
-
-  const bytes = [];
-
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes.push(parseInt(hex.slice(i, i + 2), 16));
-  }
-
-  return bytes;
-}
-
-/* -------------------------------------------------------
-   Resource fork / .dfont parser
-------------------------------------------------------- */
-
-function parseResourceFork(buffer) {
-  const view = new DataView(buffer);
-
-  if (buffer.byteLength < 16) {
-    throw new Error("File is too small to be a .dfont resource fork.");
-  }
-
-  const dataOffset = readU32(view, 0);
-  const mapOffset = readU32(view, 4);
-  const dataLength = readU32(view, 8);
-  const mapLength = readU32(view, 12);
-
-  if (dataOffset + dataLength > buffer.byteLength) {
-    throw new Error("Resource data area points outside the file.");
-  }
-
-  if (mapOffset + mapLength > buffer.byteLength) {
-    throw new Error("Resource map area points outside the file.");
-  }
-
-  const typeListOffset = mapOffset + readU16(view, mapOffset + 24);
-  const nameListOffset = mapOffset + readU16(view, mapOffset + 26);
-  const typeCount = readU16(view, typeListOffset) + 1;
-  const resources = [];
-
-  for (let t = 0; t < typeCount; t++) {
-    const typeEntryOffset = typeListOffset + 2 + t * 8;
-    const type = readTag(view, typeEntryOffset);
-    const resourceCount = readU16(view, typeEntryOffset + 4) + 1;
-    const referenceListOffset = typeListOffset + readU16(view, typeEntryOffset + 6);
-
-    for (let r = 0; r < resourceCount; r++) {
-      const refOffset = referenceListOffset + r * 12;
-      const id = readI16(view, refOffset);
-      const nameOffset = readU16(view, refOffset + 2);
-      const attributes = readU8(view, refOffset + 4);
-      const dataRelativeOffset = readU24(view, refOffset + 5);
-      const dataBlockOffset = dataOffset + dataRelativeOffset;
-      const resourceLength = readU32(view, dataBlockOffset);
-      const resourceDataOffset = dataBlockOffset + 4;
-
-      if (resourceDataOffset + resourceLength > buffer.byteLength) {
-        throw new Error(`${type} resource #${id} points outside the file.`);
-      }
-
-      const name = nameOffset === 0xffff
-        ? null
-        : readPascalString(view, nameListOffset + nameOffset);
-      const data = buffer.slice(resourceDataOffset, resourceDataOffset + resourceLength);
-
-      resources.push({
-        type,
-        id,
-        name,
-        attributes,
-        data,
-        absoluteDataOffset: resourceDataOffset,
-        absoluteDataEnd: resourceDataOffset + resourceLength
-      });
-    }
-  }
-
-  return resources;
-}
-
-/* -------------------------------------------------------
-   Embedded bitmap sfnt parser: bloc/bdat
-------------------------------------------------------- */
-
-function parseBitmapSFNT(buffer) {
-  const view = new DataView(buffer);
-
-  if (buffer.byteLength < 12) {
-    throw new Error("sfnt resource is too small.");
-  }
-
-  const scalerType = readTagOrVersion(view, 0);
-  const numTables = readU16(view, 4);
-  const tables = [];
-
-  for (let i = 0; i < numTables; i++) {
-    const offset = 12 + i * 16;
-    const tag = readTag(view, offset);
-    const tableOffset = readU32(view, offset + 8);
-    const length = readU32(view, offset + 12);
-
-    if (tableOffset + length > buffer.byteLength) {
-      throw new Error(`${tag} table points outside the sfnt resource.`);
-    }
-
-    tables.push({ tag, offset: tableOffset, length });
-  }
-
-  const bloc = findTable(tables, "bloc") || findTable(tables, "EBLC") || findTable(tables, "CBLC");
-  const bdat = findTable(tables, "bdat") || findTable(tables, "EBDT") || findTable(tables, "CBDT");
-
-  if (!bloc || !bdat) {
-    throw new Error("No supported bitmap sfnt tables found. Expected bloc/bdat.");
-  }
-
-  const cmap = findTable(tables, "cmap");
-  const cmapMaps = cmap ? parseCmap(view, cmap) : { charToGlyph: new Map(), glyphToChars: new Map() };
-  const strikes = parseBlocTable(view, bloc, bdat);
-
-  return {
-    buffer,
-    scalerType,
-    tables,
-    bloc,
-    bdat,
-    charToGlyph: cmapMaps.charToGlyph,
-    glyphToChars: cmapMaps.glyphToChars,
-    strikes
-  };
-}
-
-function parseBlocTable(view, bloc, bdat) {
-  const base = bloc.offset;
-  const version = readU32(view, base);
-  const numSizes = readU32(view, base + 4);
-  const strikes = [];
-
-  if (version !== 0x00020000) {
-    throw new Error(`Unsupported bloc version 0x${version.toString(16)}.`);
-  }
-
-  for (let sizeIndex = 0; sizeIndex < numSizes; sizeIndex++) {
-    const sizeOffset = base + 8 + sizeIndex * 48;
-    const indexSubTableArrayOffset = readU32(view, sizeOffset);
-    const numberOfIndexSubTables = readU32(view, sizeOffset + 8);
-    const startGlyphIndex = readU16(view, sizeOffset + 40);
-    const endGlyphIndex = readU16(view, sizeOffset + 42);
-    const ppemX = readU8(view, sizeOffset + 44);
-    const ppemY = readU8(view, sizeOffset + 45);
-    const bitDepth = readU8(view, sizeOffset + 46);
-    const flags = readU8(view, sizeOffset + 47);
-    const glyphs = new Map();
-    const imageFormats = new Set();
-    const bitmapRanges = [];
-
-    for (let i = 0; i < numberOfIndexSubTables; i++) {
-      const arrayOffset = base + indexSubTableArrayOffset + i * 8;
-      const firstGlyphIndex = readU16(view, arrayOffset);
-      const lastGlyphIndex = readU16(view, arrayOffset + 2);
-      const additionalOffset = readU32(view, arrayOffset + 4);
-      const subtableOffset = base + indexSubTableArrayOffset + additionalOffset;
-      parseIndexSubTable(view, subtableOffset, firstGlyphIndex, lastGlyphIndex, bdat, glyphs, imageFormats, bitmapRanges);
-    }
-
-    const dataStart = bitmapRanges.length > 0
-      ? Math.min(...bitmapRanges.map(range => range.start))
-      : Infinity;
-    const dataEnd = bitmapRanges.length > 0
-      ? Math.max(...bitmapRanges.map(range => range.end))
-      : -Infinity;
-
-    strikes.push({
-      startGlyphIndex,
-      endGlyphIndex,
-      ppemX,
-      ppemY,
-      bitDepth,
-      flags,
-      glyphs,
-      imageFormats: Array.from(imageFormats).sort(),
-      dataStart,
-      dataEnd
-    });
-  }
-
-  return strikes;
-}
-
-function parseIndexSubTable(view, subtableOffset, firstGlyphIndex, lastGlyphIndex, bdat, glyphs, imageFormats, bitmapRanges) {
-  const indexFormat = readU16(view, subtableOffset);
-  const imageFormat = readU16(view, subtableOffset + 2);
-  const imageDataOffset = readU32(view, subtableOffset + 4);
-
-  imageFormats.add(imageFormat);
-
-  if (indexFormat !== 1) {
-    throw new Error(`Unsupported bitmap index format ${indexFormat}.`);
-  }
-
-  if (imageFormat !== 2) {
-    throw new Error(`Unsupported bitmap image format ${imageFormat}.`);
-  }
-
-  const glyphCount = lastGlyphIndex - firstGlyphIndex + 1;
-  const offsets = [];
-
-  for (let i = 0; i < glyphCount + 1; i++) {
-    offsets.push(readU32(view, subtableOffset + 8 + i * 4));
-  }
-
-  for (let i = 0; i < glyphCount; i++) {
-    const start = offsets[i];
-    const end = offsets[i + 1];
-
-    if (end <= start) {
-      continue;
-    }
-
-    const glyphOffset = bdat.offset + imageDataOffset + start;
-    const glyphLength = end - start;
-
-    if (glyphOffset + glyphLength > bdat.offset + bdat.length) {
-      throw new Error(`Bitmap glyph ${firstGlyphIndex + i} points outside bdat.`);
-    }
-
-    bitmapRanges.push({ start: glyphOffset, end: glyphOffset + glyphLength });
-
-    try {
-      glyphs.set(firstGlyphIndex + i, parseSmallBitmapGlyph(view, glyphOffset, glyphLength));
-    } catch (error) {
-      // Byte glitches can corrupt individual glyph metrics. Keep the rest of the strike usable.
-    }
+/* ---------- preferences ---------- */
+function savePrefs() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      phrase: previewTextInput.value,
+      phraseHeight: phraseHeight,
+      typeHeight: typeHeight,
+      signatureText: glitch.signatureText,
+      length: glitch.length,
+      amount: glitch.amount
+    }));
+  } catch (error) {
+    /* ignore storage failures */
   }
 }
 
-function parseSmallBitmapGlyph(view, offset, length) {
-  if (length < 5) {
-    throw new Error("Bitmap glyph is too small for smallGlyphMetrics.");
+function restorePrefs() {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+  } catch (error) {
+    saved = null;
+  }
+  if (!saved) {
+    return;
   }
 
-  const height = readU8(view, offset);
-  const width = readU8(view, offset + 1);
-  const bearingX = readI8(view, offset + 2);
-  const bearingY = readI8(view, offset + 3);
-  const advance = readU8(view, offset + 4);
-  const bitmapOffset = offset + 5;
-  const bitmapLength = length - 5;
-
-  if (width > 128 || height > 128) {
-    throw new Error(`Bitmap glyph metrics are too large after corruption: ${width}x${height}.`);
+  if (typeof saved.phrase === "string") {
+    previewTextInput.value = saved.phrase;
   }
-
-  return {
-    view,
-    height,
-    width,
-    bearingX,
-    bearingY,
-    advance,
-    bitmapOffset,
-    bitmapLength
-  };
-}
-
-function parseCmap(view, table) {
-  const base = table.offset;
-  const numTables = readU16(view, base + 2);
-  const records = [];
-
-  for (let i = 0; i < numTables; i++) {
-    const recordOffset = base + 4 + i * 8;
-    records.push({
-      platformID: readU16(view, recordOffset),
-      encodingID: readU16(view, recordOffset + 2),
-      offset: base + readU32(view, recordOffset + 4)
-    });
+  // Back-compat: old prefs stored a single shared `height`.
+  const legacyHeight = Number.isFinite(saved.height) ? saved.height : null;
+  const ph = Number.isFinite(saved.phraseHeight) ? saved.phraseHeight : legacyHeight;
+  const th = Number.isFinite(saved.typeHeight) ? saved.typeHeight : legacyHeight;
+  if (Number.isFinite(ph)) {
+    phraseHeight = ph;
+    phraseHeightInput.value = ph;
+    phraseHeightReadout.textContent = `${ph} px`;
   }
-
-  const record = records.find(item => item.platformID === 3 && item.encodingID === 1) ||
-    records.find(item => item.platformID === 0) ||
-    records[0];
-
-  if (!record) {
-    return { charToGlyph: new Map(), glyphToChars: new Map() };
+  if (Number.isFinite(th)) {
+    typeHeight = th;
+    typeHeightInput.value = th;
+    typeHeightReadout.textContent = `${th} px`;
   }
-
-  const format = readU16(view, record.offset);
-
-  if (format === 4) {
-    return parseCmapFormat4(view, record.offset);
+  if (typeof saved.signatureText === "string") {
+    glitch.signatureText = saved.signatureText;
+    signatureInput.value = saved.signatureText;
   }
-
-  if (format === 0) {
-    return parseCmapFormat0(view, record.offset);
+  if (Number.isFinite(saved.length)) {
+    glitch.length = saved.length;
+    corruptLengthInput.value = String(saved.length);
   }
-
-  return { charToGlyph: new Map(), glyphToChars: new Map() };
-}
-
-function parseCmapFormat0(view, offset) {
-  const charToGlyph = new Map();
-  const glyphToChars = new Map();
-
-  for (let charCode = 0; charCode < 256; charCode++) {
-    const glyphID = readU8(view, offset + 6 + charCode);
-
-    if (glyphID > 0) {
-      addCmapEntry(charToGlyph, glyphToChars, charCode, glyphID);
-    }
+  if (Number.isFinite(saved.amount)) {
+    glitch.amount = saved.amount;
+    glitchInput.value = String(saved.amount);
+    glitchValue.textContent = `${saved.amount}%`;
   }
-
-  return { charToGlyph, glyphToChars };
-}
-
-function parseCmapFormat4(view, offset) {
-  const length = readU16(view, offset + 2);
-  const segCount = readU16(view, offset + 6) / 2;
-  const endCodeOffset = offset + 14;
-  const startCodeOffset = endCodeOffset + segCount * 2 + 2;
-  const idDeltaOffset = startCodeOffset + segCount * 2;
-  const idRangeOffsetOffset = idDeltaOffset + segCount * 2;
-  const charToGlyph = new Map();
-  const glyphToChars = new Map();
-
-  for (let i = 0; i < segCount; i++) {
-    const endCode = readU16(view, endCodeOffset + i * 2);
-    const startCode = readU16(view, startCodeOffset + i * 2);
-    const idDelta = readI16(view, idDeltaOffset + i * 2);
-    const idRangeOffsetPosition = idRangeOffsetOffset + i * 2;
-    const idRangeOffset = readU16(view, idRangeOffsetPosition);
-
-    if (startCode === 0xffff && endCode === 0xffff) {
-      continue;
-    }
-
-    for (let charCode = startCode; charCode <= endCode; charCode++) {
-      let glyphID;
-
-      if (idRangeOffset === 0) {
-        glyphID = (charCode + idDelta) & 0xffff;
-      } else {
-        const glyphOffset = idRangeOffsetPosition + idRangeOffset + (charCode - startCode) * 2;
-
-        if (glyphOffset < offset || glyphOffset + 2 > offset + length) {
-          continue;
-        }
-
-        const rawGlyphID = readU16(view, glyphOffset);
-        glyphID = rawGlyphID === 0 ? 0 : (rawGlyphID + idDelta) & 0xffff;
-      }
-
-      if (glyphID > 0) {
-        addCmapEntry(charToGlyph, glyphToChars, charCode, glyphID);
-      }
-    }
-  }
-
-  return { charToGlyph, glyphToChars };
-}
-
-function addCmapEntry(charToGlyph, glyphToChars, charCode, glyphID) {
-  charToGlyph.set(charCode, glyphID);
-
-  if (!glyphToChars.has(glyphID)) {
-    glyphToChars.set(glyphID, []);
-  }
-
-  glyphToChars.get(glyphID).push(charCode);
-}
-
-function findTable(tables, tag) {
-  return tables.find(table => table.tag === tag);
-}
-
-/* -------------------------------------------------------
-   NFNT parser
-------------------------------------------------------- */
-
-function parseNFNT(buffer) {
-  const view = new DataView(buffer);
-
-  if (buffer.byteLength < 26) {
-    throw new Error("NFNT resource is too small.");
-  }
-
-  const nfnt = {
-    view,
-    fontType: readI16(view, 0),
-    firstChar: readU16(view, 2),
-    lastChar: readU16(view, 4),
-    widMax: readI16(view, 6),
-    kernMax: readI16(view, 8),
-    nDescent: readI16(view, 10),
-    fRectWidth: readI16(view, 12),
-    fRectHeight: readI16(view, 14),
-    owTLoc: readU16(view, 16),
-    ascent: readI16(view, 18),
-    descent: readI16(view, 20),
-    leading: readI16(view, 22),
-    rowWords: readU16(view, 24)
-  };
-
-  if (nfnt.rowWords === 0) {
-    throw new Error("NFNT has no bitmap rows.");
-  }
-
-  nfnt.bitImageOffset = 26;
-  nfnt.bitImageBytes = nfnt.rowWords * nfnt.fRectHeight * 2;
-  nfnt.locTableOffset = nfnt.bitImageOffset + nfnt.bitImageBytes;
-  nfnt.owTableOffset = nfnt.owTLoc * 2;
-  nfnt.strikeWidth = nfnt.rowWords * 16;
-  nfnt.glyphCount = nfnt.lastChar - nfnt.firstChar + 1;
-
-  if (nfnt.locTableOffset + (nfnt.glyphCount + 2) * 2 > buffer.byteLength) {
-    throw new Error("NFNT bitmap location table is outside the resource.");
-  }
-
-  if (nfnt.owTableOffset + (nfnt.glyphCount + 1) * 2 > buffer.byteLength) {
-    throw new Error("NFNT offset/width table is outside the resource.");
-  }
-
-  return nfnt;
-}
-
-/* -------------------------------------------------------
-   NFNT rendering
-------------------------------------------------------- */
-
-function drawNFNTStrike(canvas, nfnt) {
-  canvas.width = Math.max(1, nfnt.strikeWidth);
-  canvas.height = Math.max(1, nfnt.fRectHeight);
-
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "black";
-
-  for (let y = 0; y < nfnt.fRectHeight; y++) {
-    for (let x = 0; x < nfnt.strikeWidth; x++) {
-      if (getNFNTPixel(nfnt, x, y)) {
-        ctx.fillRect(x, y, 1, 1);
-      }
-    }
-  }
-}
-
-function drawNFNTText(canvas, nfnt, text) {
-  const glyphs = [];
-  let totalWidth = 2;
-
-  for (const char of text) {
-    const glyph = getGlyphInfo(nfnt, char.charCodeAt(0));
-    glyphs.push(glyph);
-    totalWidth += glyph ? Math.max(1, glyph.advance) : Math.max(1, nfnt.widMax);
-  }
-
-  canvas.width = Math.max(1, totalWidth + 2);
-  canvas.height = Math.max(1, nfnt.fRectHeight + 4);
-
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "black";
-
-  let penX = 2;
-  const penY = 2;
-
-  for (const glyph of glyphs) {
-    if (!glyph) {
-      penX += Math.max(1, nfnt.widMax);
-      continue;
-    }
-
-    const destX = penX + glyph.offset;
-
-    for (let y = 0; y < nfnt.fRectHeight; y++) {
-      for (let x = 0; x < glyph.width; x++) {
-        if (getNFNTPixel(nfnt, glyph.sourceX + x, y)) {
-          ctx.fillRect(destX + x, penY + y, 1, 1);
-        }
-      }
-    }
-
-    penX += Math.max(1, glyph.advance);
-  }
-}
-
-function getGlyphInfo(nfnt, charCode) {
-  const index = charCode >= nfnt.firstChar && charCode <= nfnt.lastChar
-    ? charCode - nfnt.firstChar
-    : nfnt.glyphCount;
-  const sourceX = readGlyphLocation(nfnt, index);
-  const nextX = readGlyphLocation(nfnt, index + 1);
-  const width = Math.max(0, nextX - sourceX);
-  const ow = readOffsetWidth(nfnt, index);
-
-  if (ow === 0xffff) {
-    return null;
-  }
-
-  return {
-    sourceX,
-    width,
-    offset: signedByte((ow >> 8) & 0xff),
-    advance: ow & 0xff
-  };
-}
-
-function getNFNTPixel(nfnt, x, y) {
-  if (x < 0 || y < 0 || x >= nfnt.strikeWidth || y >= nfnt.fRectHeight) {
-    return false;
-  }
-
-  const wordIndex = y * nfnt.rowWords + Math.floor(x / 16);
-  const wordOffset = nfnt.bitImageOffset + wordIndex * 2;
-  const word = readU16(nfnt.view, wordOffset);
-  const bitIndex = 15 - (x % 16);
-
-  return (word & (1 << bitIndex)) !== 0;
-}
-
-function readGlyphLocation(nfnt, index) {
-  return readU16(nfnt.view, nfnt.locTableOffset + index * 2);
-}
-
-function readOffsetWidth(nfnt, index) {
-  return readU16(nfnt.view, nfnt.owTableOffset + index * 2);
-}
-
-/* -------------------------------------------------------
-   sfnt bitmap rendering
-------------------------------------------------------- */
-
-function drawSFNTBitmapText(canvas, strike, charToGlyph, text) {
-  const glyphRuns = [];
-  let width = 4;
-  let maxBearingY = 0;
-  let maxDescent = 0;
-
-  for (const char of text) {
-    const glyphID = charToGlyph.get(char.charCodeAt(0));
-    const glyph = glyphID === undefined ? null : strike.glyphs.get(glyphID);
-    glyphRuns.push(glyph);
-
-    if (glyph) {
-      width += Math.max(1, glyph.advance);
-      maxBearingY = Math.max(maxBearingY, glyph.bearingY);
-      maxDescent = Math.max(maxDescent, glyph.height - glyph.bearingY);
-    } else {
-      width += Math.max(2, Math.round(strike.ppemX / 2));
-    }
-  }
-
-  const baseline = 2 + Math.max(maxBearingY, strike.ppemY);
-  const height = Math.max(1, baseline + maxDescent + 2);
-
-  canvas.width = Math.max(1, width + 2);
-  canvas.height = height;
-
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "black";
-
-  let penX = 2;
-
-  for (const glyph of glyphRuns) {
-    if (!glyph) {
-      penX += Math.max(2, Math.round(strike.ppemX / 2));
-      continue;
-    }
-
-    drawSFNTBitmapGlyph(ctx, glyph, penX + glyph.bearingX, baseline - glyph.bearingY);
-    penX += Math.max(1, glyph.advance);
-  }
-}
-
-function drawSFNTBitmapAtlas(canvas, strike, glyphToChars) {
-  const glyphEntries = Array.from(strike.glyphs.entries()).sort((a, b) => a[0] - b[0]);
-  const padding = 2;
-  let width = padding;
-  let height = padding;
-
-  for (const [, glyph] of glyphEntries) {
-    width += glyph.width + padding;
-    height = Math.max(height, glyph.height + padding * 2);
-  }
-
-  canvas.width = Math.max(1, width);
-  canvas.height = Math.max(1, height);
-
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "black";
-
-  let x = padding;
-
-  for (const [, glyph] of glyphEntries) {
-    drawSFNTBitmapGlyph(ctx, glyph, x, padding);
-    x += glyph.width + padding;
-  }
-}
-
-function drawSFNTBitmapGlyph(ctx, glyph, destX, destY) {
-  for (let y = 0; y < glyph.height; y++) {
-    for (let x = 0; x < glyph.width; x++) {
-      if (getSFNTBitmapGlyphPixel(glyph, x, y)) {
-        ctx.fillRect(destX + x, destY + y, 1, 1);
-      }
-    }
-  }
-}
-
-function getSFNTBitmapGlyphPixel(glyph, x, y) {
-  const bitIndex = y * glyph.width + x;
-  const byteOffset = glyph.bitmapOffset + Math.floor(bitIndex / 8);
-
-  if (byteOffset >= glyph.bitmapOffset + glyph.bitmapLength) {
-    return false;
-  }
-
-  const byte = readU8(glyph.view, byteOffset);
-  const bit = 7 - (bitIndex % 8);
-
-  return (byte & (1 << bit)) !== 0;
-}
-
-/* -------------------------------------------------------
-   Deterministic byte mutation
-------------------------------------------------------- */
-
-function mulberry32(seed) {
-  return function nextRandom() {
-    let t = seed += 0x6d2b79f5;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hexBytes(buffer, offset, length) {
-  const bytes = new Uint8Array(buffer, offset, length);
-  const parts = [];
-
-  for (const byte of bytes) {
-    parts.push(byte.toString(16).padStart(2, "0").toUpperCase());
-  }
-
-  return parts.join(" ");
-}
-
-/* -------------------------------------------------------
-   Binary helpers
-------------------------------------------------------- */
-
-function readU8(view, offset) {
-  return view.getUint8(offset);
-}
-
-function readI8(view, offset) {
-  return view.getInt8(offset);
-}
-
-function readU16(view, offset) {
-  return view.getUint16(offset, false);
-}
-
-function readI16(view, offset) {
-  return view.getInt16(offset, false);
-}
-
-function readU24(view, offset) {
-  return (
-    (view.getUint8(offset) << 16) |
-    (view.getUint8(offset + 1) << 8) |
-    view.getUint8(offset + 2)
-  );
-}
-
-function readU32(view, offset) {
-  return view.getUint32(offset, false);
-}
-
-function readTag(view, offset) {
-  return String.fromCharCode(
-    view.getUint8(offset),
-    view.getUint8(offset + 1),
-    view.getUint8(offset + 2),
-    view.getUint8(offset + 3)
-  );
-}
-
-function readTagOrVersion(view, offset) {
-  const a = view.getUint8(offset);
-  const b = view.getUint8(offset + 1);
-  const c = view.getUint8(offset + 2);
-  const d = view.getUint8(offset + 3);
-
-  if (a === 0x00 && b === 0x01 && c === 0x00 && d === 0x00) {
-    return "TrueType 1.0";
-  }
-
-  return String.fromCharCode(a, b, c, d);
-}
-
-function readPascalString(view, offset) {
-  const length = readU8(view, offset);
-  let result = "";
-
-  for (let i = 0; i < length; i++) {
-    result += String.fromCharCode(readU8(view, offset + 1 + i));
-  }
-
-  return result;
-}
-
-function signedByte(value) {
-  return value >= 128 ? value - 256 : value;
 }

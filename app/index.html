@@ -16,300 +16,514 @@
       --red: #a6342f;
       --blue: #244f83;
       --muted: #625b50;
+      --dock-h: 92px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
 
     body {
       margin: 0;
-      background:
-        linear-gradient(rgba(21, 17, 13, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(21, 17, 13, 0.035) 1px, transparent 1px),
-        var(--paper);
-      background-size: 12px 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--paper);
       color: var(--ink);
       font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     }
 
-    main {
-      width: 100%;
-      padding: 24px;
-    }
-
-    h1 {
-      margin: 0 0 18px;
-      font-size: 30px;
-      line-height: 1;
-      letter-spacing: 0;
-      text-transform: uppercase;
-    }
-
-    h2 {
-      margin: 28px 0 12px;
-      font-size: 16px;
-      text-transform: uppercase;
-    }
-
-    h3 {
-      margin: 0;
-      font-size: 15px;
-    }
-
-    .app-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 24px;
-      align-items: start;
-    }
-
-    .workspace {
-      min-width: 0;
-    }
-
-    .controls {
-      position: sticky;
-      top: 24px;
-      display: grid;
-      gap: 12px;
-      padding: 12px;
-      border: 2px solid var(--line);
+    /* ---------- top bar ---------- */
+    .topbar {
+      flex: none;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 18px;
+      border-bottom: 2px solid var(--line);
       background: var(--panel);
-      box-shadow: 4px 4px 0 var(--line);
     }
 
-    label {
-      display: grid;
-      gap: 6px;
-      min-width: 0;
+    .topbar h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .file-name {
       color: var(--muted);
       font-size: 12px;
-      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 50vw;
+    }
+
+    /* ---------- stacked screens: phrase, then full typeface ---------- */
+    .screens {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .screen {
+      min-width: 0;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .screen:last-child { border-bottom: none; }
+
+    .screen-head {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 2px solid var(--line);
+      background:
+        repeating-linear-gradient(135deg, transparent 0 7px, rgba(21,17,13,0.04) 7px 8px),
+        var(--panel);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
-    input[type="file"],
-    input[type="text"],
-    input[type="number"],
-    select,
-    input[type="range"],
-    button {
-      width: 100%;
-      min-height: 38px;
-      font: inherit;
+    .screen-head .tag {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
     }
 
-    input[type="text"],
-    input[type="number"],
-    select {
-      padding: 0 10px;
+    .head-cap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+    .head-cap .readout {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+    }
+    .head-cap input[type="range"] {
+      width: 150px;
+      max-width: 38vw;
+      margin: 0;
+      accent-color: var(--green);
+    }
+
+    .screen-body {
+      flex: 1 1 auto;
+      min-height: 220px;
+      padding: 22px;
+      background:
+        linear-gradient(rgba(21, 17, 13, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(21, 17, 13, 0.03) 1px, transparent 1px),
+        var(--paper);
+      background-size: 12px 12px;
+    }
+
+    /* glyph canvases */
+    .render-canvas {
+      display: block;
+      image-rendering: pixelated;
+      max-width: none;
+    }
+
+    .phrase-stack { display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center; width: 100%; min-height: 100%; }
+    .phrase-line { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; }
+    .phrase-caret {
+      flex: none;
+      width: 4px;
+      align-self: center;
+      background: var(--green);
+      opacity: 0.25;
+    }
+    #phraseBody { cursor: text; }
+    #phraseBody.typing { outline: 2px solid var(--green); outline-offset: -2px; }
+    #phraseBody.typing .phrase-caret { animation: caret-blink 1.06s steps(1) infinite; }
+    @keyframes caret-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    .phrase-hint {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .spec-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 26px; }
+    .spec-section:last-child { margin-bottom: 0; }
+
+    .spec-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .spec-label::after {
+      content: "";
+      flex: 1;
+      height: 2px;
+      background: var(--soft-line);
+    }
+
+    .spec-label .count {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+    }
+
+    .empty {
+      display: grid;
+      place-content: center;
+      min-height: 220px;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .empty strong { color: var(--ink); }
+
+    .empty.error strong, .error-text { color: var(--red); }
+
+    /* ---------- bottom dock ---------- */
+    .dock {
+      flex: none;
+      position: relative;
+      z-index: 5;
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      min-height: var(--dock-h);
+      border-top: 2px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 -4px 0 rgba(21, 17, 13, 0.06);
+    }
+
+    .dock-cell {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 7px;
+      padding: 12px 16px;
+      border-right: 2px solid var(--line);
+    }
+
+    .dock-cell.grow { flex: 1 1 auto; min-width: 0; }
+    .dock-cell.res { flex: 1.4 1 0; min-width: 220px; }
+    .dock-cell.height { flex: 1 1 0; min-width: 170px; }
+    .dock-cell.file { flex: 0 0 auto; min-width: 168px; }
+    .dock-cell.adv { border-right: none; justify-content: center; }
+
+    .dock label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .dock label .readout {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+
+    input[type="file"] { display: none; }
+
+    .dock .file-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 38px;
+      padding: 0 14px;
+      border: 2px solid var(--line);
+      background: var(--green);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--line);
+      white-space: nowrap;
+    }
+    .dock .file-btn .arrow { font-size: 12px; line-height: 1; transform: translateY(-1px); }
+    .dock .file-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+    .dock .file-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+
+    input[type="text"] {
+      width: 100%;
+      min-height: 38px;
+      padding: 0 12px;
       border: 2px solid var(--line);
       background: white;
       color: var(--ink);
+      font: inherit;
     }
 
+    /* range with ticks */
+    .range-wrap { display: flex; flex-direction: column; gap: 2px; }
+
     input[type="range"] {
+      width: 100%;
+      margin: 0;
       accent-color: var(--green);
     }
+    input[type="range"]:disabled { accent-color: var(--soft-line); cursor: not-allowed; }
+
+    .ticks {
+      display: flex;
+      justify-content: space-between;
+      gap: 2px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .ticks span { flex: 1 1 0; text-align: center; white-space: nowrap; }
+    .ticks span:first-child { text-align: left; }
+    .ticks span:last-child { text-align: right; }
+    .ticks span.on { color: var(--ink); }
+    .ticks.disabled span { opacity: 0.4; }
 
     button {
       border: 2px solid var(--line);
       background: var(--green);
       color: white;
-      cursor: pointer;
+      font: inherit;
       font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
+      cursor: pointer;
       box-shadow: 2px 2px 0 var(--line);
+      min-height: 38px;
+      padding: 0 14px;
+      white-space: nowrap;
     }
+    button:active { transform: translate(2px, 2px); box-shadow: none; }
+    button.ghost { background: var(--panel); color: var(--ink); }
+    button[aria-expanded="true"] { background: var(--ink); color: var(--panel); }
 
-    button:active {
-      transform: translate(2px, 2px);
-      box-shadow: none;
-    }
-
-    .readout {
-      color: var(--ink);
-      font-variant-numeric: tabular-nums;
-    }
-
-    pre {
-      margin: 0;
-      padding: 12px;
-      overflow: auto;
-      border: 2px solid var(--line);
-      background: #fffdf7;
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    #log {
-      max-height: 128px;
-    }
-
-    .resource {
-      margin: 18px 0 28px;
-      padding: 14px;
+    /* ---------- advanced popover ---------- */
+    .adv-panel {
+      position: absolute;
+      right: 14px;
+      bottom: calc(var(--dock-h) + 10px);
+      z-index: 20;
+      width: 400px;
+      max-width: calc(100vw - 28px);
+      max-height: calc(100vh - var(--dock-h) - 24px);
+      overflow-y: auto;
+      display: grid;
+      gap: 12px;
+      padding: 16px;
       border: 2px solid var(--line);
       background: var(--panel);
-      box-shadow: 4px 4px 0 var(--line);
+      box-shadow: 6px 6px 0 var(--line);
     }
+    .adv-panel[hidden] { display: none; }
 
-    .resource-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: baseline;
-      margin-bottom: 12px;
+    .adv-panel h2 {
+      margin: 0;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
       border-bottom: 2px solid var(--line);
       padding-bottom: 8px;
     }
 
-    .badge {
-      color: white;
-      background: var(--blue);
-      padding: 3px 7px;
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .meta {
+    .adv-panel label {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .canvas-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      align-items: start;
-    }
-
-    .frame {
-      min-width: 0;
-      max-width: 100%;
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-
-    .frame-title {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 6px;
+      gap: 6px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 800;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
     }
+    .adv-panel label .readout { color: var(--ink); }
 
-    canvas {
-      display: block;
+    .adv-panel input[type="text"],
+    .adv-panel input[type="number"] {
+      width: 100%;
+      min-height: 34px;
+      padding: 0 10px;
       border: 2px solid var(--line);
       background: white;
-      image-rendering: pixelated;
-      max-width: none;
+      color: var(--ink);
+      font: inherit;
     }
+    .adv-panel input[type="range"] { accent-color: var(--red); }
 
-    a.download {
+    .adv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .adv-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .adv-actions button { flex: 1 1 0; min-width: 110px; }
+    .adv-actions .download { flex: 1 1 100%; }
+    .adv-actions .reroll { background: var(--red); }
+
+    .download {
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 2px dashed var(--line);
       color: var(--red);
       font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
       text-decoration: none;
+      text-align: center;
     }
+    .download[hidden] { display: none; }
 
-    .download-row {
-      display: flex;
-      justify-content: flex-start;
-    }
-
-    .notice {
-      padding: 14px;
-      border: 2px solid var(--line);
+    .adv-panel pre {
+      margin: 0;
+      max-height: 140px;
+      overflow: auto;
+      padding: 10px;
+      border: 2px solid var(--soft-line);
       background: #fffdf7;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--muted);
     }
 
-    .error {
-      color: var(--red);
-    }
-
-    @media (max-width: 900px) {
-      .app-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .controls {
-        position: static;
-        order: -1;
-      }
+    @media (max-width: 720px) {
+      .dock { flex-wrap: wrap; min-height: 0; }
+      .dock-cell { flex: 1 1 140px; border-bottom: 2px solid var(--line); }
     }
   </style>
 </head>
 <body>
-  <main>
+  <header class="topbar">
     <h1>.dfont bitmap glitch lab</h1>
+    <span id="fileName" class="file-name">no file loaded</span>
+  </header>
 
-    <div class="app-layout">
-      <section class="workspace">
-        <h2>Output</h2>
-        <div id="output" class="notice">Waiting for .dfont bitmap resources.</div>
-      </section>
-
-      <aside class="controls">
-        <label>
-          Upload .dfont
-          <input id="fileInput" type="file" accept=".dfont,.rsrc,application/octet-stream" />
+  <main class="screens">
+    <section class="screen" data-screen-label="Your text">
+      <div class="screen-head">
+        <span>Your text</span>
+        <label class="head-cap" for="phraseHeightInput">
+          Cap height <span id="phraseHeightReadout" class="readout">96 px</span>
+          <input id="phraseHeightInput" type="range" min="24" max="360" step="4" value="96" />
         </label>
-
-        <label>
-          Text
-          <input id="previewText" type="text" value="ABC abc 012" />
-        </label>
-
-        <label>
-          Strike
-          <select id="strikeSelect" disabled>
-            <option>Upload a .dfont</option>
-          </select>
-        </label>
-
-        <label>
-          Signature
-          <input id="signatureInput" type="text" value="00 01 01 00 01" />
-        </label>
-
-        <label>
-          Length
-          <input id="corruptLengthInput" type="number" min="0" max="4096" step="1" value="96" />
-        </label>
-
-        <label>
-          Zoom <span id="zoomValue" class="readout">8x</span>
-          <input id="zoomInput" type="range" min="2" max="18" value="8" />
-        </label>
-
-        <label>
-          Mutation <span id="glitchValue" class="readout">34%</span>
-          <input id="glitchInput" type="range" min="0" max="100" value="34" />
-        </label>
-
-        <button id="rerollButton" type="button">Reroll</button>
-
-        <div class="download-row">
-          <a id="downloadDfont" class="download" href="#" download hidden>Download corrupted .dfont</a>
+      </div>
+      <div id="phraseBody" class="screen-body">
+        <div class="empty">
+          <div><strong>Upload a .dfont</strong><br />to glitch its bitmap strikes.</div>
         </div>
+      </div>
+    </section>
 
-        <label>
-          Resource fork
-          <pre id="log">Upload a .dfont file.</pre>
+    <section class="screen" data-screen-label="Typeface">
+      <div class="screen-head">
+        <span>Typeface</span>
+        <label class="head-cap" for="typeHeightInput">
+          Cap height <span id="typeHeightReadout" class="readout">96 px</span>
+          <input id="typeHeightInput" type="range" min="24" max="360" step="4" value="96" />
         </label>
-      </aside>
-    </div>
+      </div>
+      <div id="typeBody" class="screen-body">
+        <div class="empty">
+          <div>The full character set<br />appears here.</div>
+        </div>
+      </div>
+    </section>
   </main>
 
+  <footer class="dock">
+    <div class="dock-cell file">
+      <label for="fileInput">Source .dfont</label>
+      <label class="file-btn" for="fileInput"><span class="arrow">▲</span><span>Upload</span></label>
+      <input id="fileInput" type="file" accept=".dfont,.rsrc,application/octet-stream" />
+    </div>
+
+    <div class="dock-cell grow phrase">
+      <label for="previewText">Your text</label>
+      <input id="previewText" type="text" value="Glitch" autocomplete="off" spellcheck="false" />
+    </div>
+
+    <div class="dock-cell res">
+      <label>Resolution <span id="resReadout" class="readout">—</span></label>
+      <div class="range-wrap">
+        <input id="resInput" type="range" min="0" max="0" step="1" value="0" disabled />
+        <div id="resTicks" class="ticks disabled"></div>
+      </div>
+    </div>
+
+    <div class="dock-cell adv">
+      <button id="advToggle" type="button" class="ghost" aria-expanded="false">Glitch ▸</button>
+    </div>
+  </footer>
+
+  <div id="advPanel" class="adv-panel" hidden>
+    <h2>Glitch — all strikes</h2>
+
+    <label>
+      Signature (hex)
+      <input id="signatureInput" type="text" value="00 01 01 00 01" autocomplete="off" spellcheck="false" />
+    </label>
+
+    <div class="adv-row">
+      <label>
+        Length
+        <input id="corruptLengthInput" type="number" min="0" max="4096" step="1" value="96" />
+      </label>
+      <label>
+        Mutation <span id="glitchValue" class="readout">0%</span>
+        <input id="glitchInput" type="range" min="0" max="100" value="0" />
+      </label>
+    </div>
+
+    <div class="adv-actions">
+      <button id="rerollButton" type="button" class="reroll">Re-glitch</button>
+      <button id="resetButton" type="button" class="ghost">Reset</button>
+      <a id="downloadDfont" class="download" href="#" download hidden>Download .dfont</a>
+    </div>
+
+    <pre id="log">Upload a .dfont file.</pre>
+  </div>
+
+  <script src="font-core.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
