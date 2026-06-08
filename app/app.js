@@ -71,6 +71,12 @@ fileInput.addEventListener("change", async () => {
   }
 });
 
+downloadDfont.addEventListener("click", event => {
+  if (downloadDfont.getAttribute("aria-disabled") === "true") {
+    event.preventDefault();
+  }
+});
+
 previewTextInput.addEventListener("input", () => {
   savePrefs();
   if (strikes.length) {
@@ -182,6 +188,8 @@ async function loadDfont(file) {
   } catch (error) {
     console.error(error);
     originalBuffer = null;
+    corruptedBuffer = null;
+    updateDownloadLink();
     showPhraseError("Could not read file", String(error.message || error));
     typeBody.innerHTML = `<div class="empty"><div>—</div></div>`;
   }
@@ -483,8 +491,9 @@ function setRangeFill(input) {
   const slider = input.closest(".slider-control");
   if (slider) {
     const clampedPct = clamp(pct, 0, 100);
-    const thumbCorrection = clampedPct * 0.19;
-    const fillCorrection = 9.5 - thumbCorrection;
+    const thumbWidth = parseFloat(getComputedStyle(slider).getPropertyValue("--range-thumb-width")) || 21;
+    const thumbCorrection = clampedPct * (thumbWidth / 100);
+    const fillCorrection = thumbWidth / 2 - thumbCorrection;
     slider.style.setProperty("--thumb-left", `calc(${clampedPct}% - ${thumbCorrection}px)`);
     slider.style.setProperty("--fill-end", `calc(${clampedPct}% + ${fillCorrection}px)`);
     slider.classList.toggle("disabled", input.disabled);
@@ -790,8 +799,9 @@ function updateDownloadLink() {
   }
 
   if (!corruptedBuffer || !currentFile || !glitch.amount) {
-    downloadDfont.hidden = true;
     downloadDfont.removeAttribute("href");
+    downloadDfont.removeAttribute("download");
+    downloadDfont.setAttribute("aria-disabled", "true");
     return;
   }
 
@@ -799,7 +809,7 @@ function updateDownloadLink() {
   corruptedObjectUrl = URL.createObjectURL(blob);
   downloadDfont.href = corruptedObjectUrl;
   downloadDfont.download = makeCorruptedDfontName(currentFile.name);
-  downloadDfont.hidden = false;
+  downloadDfont.setAttribute("aria-disabled", "false");
 }
 
 function makeCorruptedDfontName(name) {

@@ -36,24 +36,28 @@
       --control-bevel-lo: #8a8a8a;
       --control-bevel-hi: #d7d7d7;
       --tick-mark: #5f5f5f;
+      --range-thumb-width: 21px;
+      --range-thumb-height: 19px;
+      --range-thumb-half: 10.5px;
+      --range-bevel-size: 2px;
       --dock-h: 82px;
       --raised-bevel:
-        inset 1px 1px 0 var(--bevel-hi),
-        inset -1px -1px 0 var(--bevel-lo);
+        inset 2px 2px 0 var(--bevel-hi),
+        inset -2px -2px 0 var(--bevel-lo);
       --dock-bevel:
-        inset 1px 1px 0 var(--bevel-hi),
-        inset -1px -1px 0 var(--dock-bevel-lo);
+        inset 2px 2px 0 var(--bevel-hi),
+        inset -2px -2px 0 var(--dock-bevel-lo);
       --screen-body-bevel:
-        inset 1px 0 0 var(--inset-lo),
-        inset -1px -1px 0 var(--inset-hi);
+        inset 2px 0 0 var(--inset-lo),
+        inset -2px -2px 0 var(--inset-hi);
       --control-bevel:
-        inset -1px -1px 0 var(--control-bevel-lo),
-        inset 1px 1px 0 var(--control-bevel-hi);
-      --pressed-bevel: inset 1px 1px 0 var(--inset-lo);
-      --input-bevel: inset 1px 1px 0 var(--input-inset-lo);
+        inset -2px -2px 0 var(--control-bevel-lo),
+        inset 2px 2px 0 var(--control-bevel-hi);
+      --pressed-bevel: inset 2px 2px 0 var(--inset-lo);
+      --input-bevel: inset 2px 2px 0 var(--input-inset-lo);
       --popover-bevel:
-        inset 1px 1px 0 var(--bevel-hi),
-        inset -1px -1px 0 var(--popover-bevel-lo),
+        inset 2px 2px 0 var(--bevel-hi),
+        inset -2px -2px 0 var(--popover-bevel-lo),
         4px 4px 0 var(--popover-shadow);
     }
 
@@ -181,7 +185,7 @@
       font-weight: 300;
       letter-spacing: 0;
       text-shadow: 1px 1px 0 var(--hi);
-      box-shadow: inset 0 1px 0 var(--bevel-hi);
+      box-shadow: inset 0 2px 0 var(--bevel-hi);
     }
 
     .screen-head::after {
@@ -190,7 +194,7 @@
       left: 8px;
       right: 8px;
       bottom: -1px;
-      height: 2px;
+      height: 3px;
       background: var(--section-line);
       pointer-events: none;
     }
@@ -340,13 +344,13 @@
       gap: 5px;
       padding: 8px 10px;
       border-right: 2px solid var(--lo);
-      box-shadow: inset 1px 0 0 var(--hi);
+      box-shadow: inset 2px 0 0 var(--hi);
     }
 
-    .dock-cell.res { flex: 0 1 230px; min-width: 190px; }
-    .dock-cell.glitch { flex: 1 1 190px; min-width: 180px; }
-    .dock-cell.file { flex: 0 0 auto; min-width: 138px; }
-    .dock-cell.actions { flex: 0 0 270px; border-right: none; }
+    .dock-cell.res,
+    .dock-cell.glitch { flex: 1 1 0; min-width: 180px; }
+    .dock-cell.file { flex: 0 0 160px; min-width: 150px; }
+    .dock-cell.actions { flex: 0 0 160px; min-width: 150px; border-right: none; }
 
     .dock label {
       display: flex;
@@ -388,7 +392,7 @@
       letter-spacing: 0;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: inset -1px -1px 0 var(--lo), inset 1px 1px 0 var(--bevel-hi);
+      box-shadow: var(--control-bevel);
       white-space: nowrap;
     }
     .dock .file-btn .arrow { font-size: 12px; line-height: 1; transform: translateY(-1px); }
@@ -443,7 +447,7 @@
 
     .slider-control {
       --fill-end: 50%;
-      --thumb-left: calc(50% - 9.5px);
+      --thumb-left: calc(50% - var(--range-thumb-half));
       position: relative;
       display: block;
       width: 100%;
@@ -460,15 +464,29 @@
       position: absolute;
       left: 0;
       right: 0;
-      top: 7px;
+      top: 50%;
       height: 11px;
+      transform: translateY(-50%);
       overflow: hidden;
-      border: 1px solid var(--soft-line);
-      border-top-color: var(--lo);
-      border-left-color: var(--lo);
-      border-right-color: var(--hi);
-      border-bottom-color: var(--hi);
-      background: var(--lcd-dark);
+      padding: var(--range-bevel-size);
+      border: 0;
+      background-color: var(--lcd-dark);
+      background-image:
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi));
+      background-position:
+        left top,
+        left var(--range-bevel-size),
+        left bottom,
+        right var(--range-bevel-size);
+      background-size:
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size)),
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size));
+      background-repeat: no-repeat;
       pointer-events: none;
     }
 
@@ -476,25 +494,39 @@
       content: "";
       position: absolute;
       z-index: 1;
-      top: 3px;
+      top: 50%;
       left: var(--thumb-left);
-      width: 19px;
-      height: 19px;
-      border: 1px solid var(--lo);
-      border-top-color: var(--hi);
-      border-left-color: var(--hi);
-      background: var(--chrome-3);
-      box-shadow: var(--control-bevel);
+      width: var(--range-thumb-width);
+      height: var(--range-thumb-height);
+      border: 0;
+      background-color: var(--chrome-3);
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo));
+      background-position:
+        left top,
+        left var(--range-bevel-size),
+        left bottom,
+        right var(--range-bevel-size);
+      background-size:
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size)),
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size));
+      background-repeat: no-repeat;
+      box-shadow: none;
+      transform: translateY(-50%);
       pointer-events: none;
     }
 
     .slider-control:has(input[type="range"]:active)::after {
-      top: 4px;
-      border-top-color: var(--lo);
-      border-left-color: var(--lo);
-      border-right-color: var(--hi);
-      border-bottom-color: var(--hi);
-      box-shadow: var(--pressed-bevel);
+      background-image:
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi));
     }
 
     .slider-control.disabled {
@@ -538,8 +570,8 @@
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 19px;
-      height: 19px;
+      width: var(--range-thumb-width);
+      height: var(--range-thumb-height);
       background: transparent;
     }
 
@@ -550,8 +582,8 @@
     }
 
     input[type="range"]::-moz-range-thumb {
-      width: 19px;
-      height: 19px;
+      width: var(--range-thumb-width);
+      height: var(--range-thumb-height);
       border: 0;
       background: transparent;
       border-radius: 0;
@@ -560,7 +592,7 @@
     .ticks {
       position: relative;
       height: 14px;
-      margin: 0 9.5px;
+      margin: 0 var(--range-thumb-half);
       font-size: 8px;
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
       font-weight: 700;
@@ -580,7 +612,7 @@
     .ticks span::before {
       content: "";
       display: block;
-      width: 1px;
+      width: 2px;
       height: 5px;
       margin: 0 auto 2px;
       background: var(--tick-mark);
@@ -622,13 +654,19 @@
       border-bottom-color: var(--hi);
     }
 
-    .dock-actions {
+    .dfont-actions {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 4px;
     }
-    .dock-actions button,
-    .dock-actions .download {
+    .dock-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+    .dfont-actions .file-btn,
+    .dfont-actions .download,
+    .dock-actions button {
       min-width: 0;
       min-height: 30px;
       padding: 0 7px;
@@ -646,7 +684,7 @@
       white-space: nowrap;
     }
     .dock-actions .reroll { background: var(--chrome-2); }
-    .dock-actions .download:active {
+    .dfont-actions .download:active {
       border-top-color: var(--lo);
       border-left-color: var(--lo);
       border-right-color: var(--hi);
@@ -670,7 +708,73 @@
       text-decoration: none;
       text-align: center;
     }
-    .download[hidden] { display: none; }
+
+    .dock .dock-button {
+      --button-surface: var(--chrome-3);
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      min-height: 30px;
+      margin: 0;
+      padding: 0 7px;
+      border: 0;
+      background-color: var(--button-surface);
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo));
+      background-position:
+        left top,
+        left var(--range-bevel-size),
+        left bottom,
+        right var(--range-bevel-size);
+      background-size:
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size)),
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size));
+      background-repeat: no-repeat;
+      color: var(--deep);
+      font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0;
+      text-align: center;
+      text-decoration: none;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: none;
+    }
+
+    .dock .dock-button:active {
+      background-image:
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi));
+      box-shadow: none;
+    }
+
+    .download[aria-disabled="true"] {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .download[aria-disabled="true"]:active {
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo));
+      box-shadow: none;
+      transform: none;
+    }
 
     @media (max-width: 720px) {
       body { padding: 0; }
@@ -698,9 +802,8 @@
       .screen-body { margin: 6px; padding: 10px; }
       .dock { flex-wrap: wrap; min-height: 0; }
       .dock-cell { flex: 1 1 128px; border-right-width: 2px; border-bottom: 2px solid var(--lo); }
-      .dock-cell.file { min-width: 132px; }
-      .dock-cell.res { min-width: 100%; }
-      .dock-cell.actions { flex-basis: 270px; }
+      .dock-cell.file { min-width: 150px; }
+      .dock-cell.actions { flex-basis: 160px; min-width: 150px; }
     }
   </style>
 </head>
@@ -751,8 +854,11 @@
 
   <footer class="dock">
     <div class="dock-cell file">
-      <label for="fileInput">Source .dfont</label>
-      <label class="file-btn" for="fileInput"><span class="arrow">▲</span><span>Upload</span></label>
+      <label for="fileInput">.DFONT</label>
+      <div class="dfont-actions">
+        <label class="file-btn dock-button" for="fileInput"><span>Upload source</span></label>
+        <a id="downloadDfont" class="download dock-button" aria-disabled="true">Download glitch</a>
+      </div>
       <input id="fileInput" type="file" accept=".dfont,.rsrc,application/octet-stream" />
     </div>
 
@@ -809,9 +915,8 @@
 
     <div class="dock-cell actions">
       <div class="dock-actions">
-        <button id="resetButton" type="button" class="ghost">Reset</button>
-        <button id="rerollButton" type="button" class="reroll">Re-glitch</button>
-        <a id="downloadDfont" class="download" href="#" download hidden>Download</a>
+        <button id="rerollButton" type="button" class="dock-button">Re-glitch</button>
+        <button id="resetButton" type="button" class="dock-button">Reset</button>
       </div>
     </div>
   </footer>
