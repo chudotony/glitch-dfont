@@ -31,7 +31,7 @@ const resetButton = document.getElementById("resetButton");
 const downloadDfont = document.getElementById("downloadDfont");
 const log = document.getElementById("log");
 
-const INK = "#15110d";
+const INK = "#404040";
 const STORE_KEY = "dfont-glitch-lab";
 
 /* default glitch settings — used by Reset */
@@ -61,7 +61,9 @@ const glitch = {
   seed: 0x4d4143
 };
 
+initRangeVisuals();
 restorePrefs();
+updateAllRangeFills();
 
 /* ---------- listeners ---------- */
 fileInput.addEventListener("change", async () => {
@@ -95,12 +97,14 @@ previewTextInput.addEventListener("blur", () => phraseBody.classList.remove("typ
 
 resInput.addEventListener("input", () => {
   selectedIndex = clamp(Number(resInput.value) || 0, 0, Math.max(0, strikes.length - 1));
+  setRangeFill(resInput);
   render();
 });
 
 phraseHeightInput.addEventListener("input", () => {
   phraseHeight = Number(phraseHeightInput.value) || 96;
   phraseHeightReadout.textContent = `${phraseHeight} px`;
+  setRangeFill(phraseHeightInput);
   savePrefs();
   if (strikes.length) {
     renderPhrase(strikes[selectedIndex]);
@@ -110,6 +114,7 @@ phraseHeightInput.addEventListener("input", () => {
 typeHeightInput.addEventListener("input", () => {
   typeHeight = Number(typeHeightInput.value) || 96;
   typeHeightReadout.textContent = `${typeHeight} px`;
+  setRangeFill(typeHeightInput);
   savePrefs();
   if (strikes.length) {
     renderTypeface(strikes[selectedIndex]);
@@ -137,6 +142,7 @@ corruptLengthInput.addEventListener("input", () => {
 glitchInput.addEventListener("input", () => {
   glitch.amount = Number(glitchInput.value) || 0;
   glitchValue.textContent = `${glitch.amount}%`;
+  setRangeFill(glitchInput);
   savePrefs();
   rebuild();
 });
@@ -156,6 +162,7 @@ resetButton.addEventListener("click", () => {
   corruptLengthInput.value = String(glitch.length);
   glitchInput.value = String(glitch.amount);
   glitchValue.textContent = `${glitch.amount}%`;
+  setRangeFill(glitchInput);
 
   savePrefs();
   rebuild();
@@ -458,6 +465,7 @@ function setupResSlider() {
     resTicks.appendChild(note);
   }
 
+  setRangeFill(resInput);
   updateResReadout();
 }
 
@@ -468,6 +476,32 @@ function updateResReadout() {
     : "—";
 }
 
+function updateAllRangeFills() {
+  [resInput, phraseHeightInput, typeHeightInput, glitchInput].forEach(setRangeFill);
+}
+
+function initRangeVisuals() {
+  document.querySelectorAll(".slider-fill-visual").forEach(fill => {
+    fill.innerHTML = "";
+    for (let i = 0; i < 48; i++) {
+      fill.appendChild(document.createElement("span"));
+    }
+  });
+}
+
+function setRangeFill(input) {
+  const min = Number(input.min) || 0;
+  const max = Number(input.max) || 100;
+  const rawValue = Number(input.value);
+  const value = Number.isFinite(rawValue) ? rawValue : min;
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  const slider = input.closest(".slider-control");
+  if (slider) {
+    slider.style.setProperty("--fill", `${clamp(pct, 0, 100)}%`);
+    slider.classList.toggle("disabled", input.disabled);
+  }
+}
+
 /* ---------- rendering ---------- */
 function render() {
   if (!strikes.length) {
@@ -475,6 +509,7 @@ function render() {
   }
   selectedIndex = clamp(selectedIndex, 0, strikes.length - 1);
   resInput.value = selectedIndex;
+  setRangeFill(resInput);
 
   const strike = strikes[selectedIndex];
   renderPhrase(strike);
