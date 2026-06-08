@@ -3,7 +3,7 @@
    - resolution slider (one milestone per strike)
    - cap height decoupled from resolution
    - two horizontal screens: phrase + full typeface specimen
-   - glitch controls live in the advanced popover (all strikes)
+   - glitch controls apply to all strikes from the bottom dock
 ======================================================= */
 
 /* ---------- element refs ---------- */
@@ -20,25 +20,23 @@ const typeHeightReadout = document.getElementById("typeHeightReadout");
 const phraseBody = document.getElementById("phraseBody");
 const typeBody = document.getElementById("typeBody");
 
-const advToggle = document.getElementById("advToggle");
-const advPanel = document.getElementById("advPanel");
-const signatureInput = document.getElementById("signatureInput");
-const corruptLengthInput = document.getElementById("corruptLengthInput");
 const glitchInput = document.getElementById("glitchInput");
 const glitchValue = document.getElementById("glitchValue");
+const glitchTicks = document.getElementById("glitchTicks");
+const maxOffsetInput = document.getElementById("maxOffsetInput");
+const maxOffsetValue = document.getElementById("maxOffsetValue");
+const maxOffsetTicks = document.getElementById("maxOffsetTicks");
 const rerollButton = document.getElementById("rerollButton");
 const resetButton = document.getElementById("resetButton");
 const downloadDfont = document.getElementById("downloadDfont");
-const log = document.getElementById("log");
 
 const INK = "#404040";
 const STORE_KEY = "dfont-glitch-lab";
 
 /* default glitch settings — used by Reset */
 const GLITCH_DEFAULTS = Object.freeze({
-  signatureText: "00 01 01 00 01",
-  length: 96,
   amount: 0,
+  maxOffset: 32,
   seed: 0x4d4143
 });
 
@@ -46,7 +44,6 @@ const GLITCH_DEFAULTS = Object.freeze({
 let currentFile = null;
 let originalBuffer = null;
 let corruptedBuffer = null;
-let corruptionInfo = null;
 let corruptedObjectUrl = null;
 
 let strikes = [];                // corrupted descriptors (with capHeight from clean)
@@ -55,15 +52,16 @@ let phraseHeight = Number(phraseHeightInput.value) || 96;
 let typeHeight = Number(typeHeightInput.value) || 96;
 
 const glitch = {
-  signatureText: "00 01 01 00 01",
-  length: 96,
   amount: 0,
+  maxOffset: 32,
   seed: 0x4d4143
 };
 
 initRangeVisuals();
 restorePrefs();
 updateAllRangeFills();
+updateTickStates(glitchInput, glitchTicks);
+updateTickStates(maxOffsetInput, maxOffsetTicks);
 
 /* ---------- listeners ---------- */
 fileInput.addEventListener("change", async () => {
@@ -121,28 +119,20 @@ typeHeightInput.addEventListener("input", () => {
   }
 });
 
-advToggle.addEventListener("click", () => {
-  const open = advPanel.hasAttribute("hidden");
-  advPanel.toggleAttribute("hidden", !open);
-  advToggle.setAttribute("aria-expanded", String(open));
-});
-
-signatureInput.addEventListener("input", () => {
-  glitch.signatureText = signatureInput.value;
-  savePrefs();
-  rebuild();
-});
-
-corruptLengthInput.addEventListener("input", () => {
-  glitch.length = Math.max(0, Math.floor(Number(corruptLengthInput.value) || 0));
-  savePrefs();
-  rebuild();
-});
-
 glitchInput.addEventListener("input", () => {
   glitch.amount = Number(glitchInput.value) || 0;
   glitchValue.textContent = `${glitch.amount}%`;
   setRangeFill(glitchInput);
+  updateTickStates(glitchInput, glitchTicks);
+  savePrefs();
+  rebuild();
+});
+
+maxOffsetInput.addEventListener("input", () => {
+  glitch.maxOffset = clamp(Number(maxOffsetInput.value) || 1, 1, 128);
+  maxOffsetValue.textContent = `±${glitch.maxOffset}`;
+  setRangeFill(maxOffsetInput);
+  updateTickStates(maxOffsetInput, maxOffsetTicks);
   savePrefs();
   rebuild();
 });
@@ -153,16 +143,18 @@ rerollButton.addEventListener("click", () => {
 });
 
 resetButton.addEventListener("click", () => {
-  glitch.signatureText = GLITCH_DEFAULTS.signatureText;
-  glitch.length = GLITCH_DEFAULTS.length;
   glitch.amount = GLITCH_DEFAULTS.amount;
+  glitch.maxOffset = GLITCH_DEFAULTS.maxOffset;
   glitch.seed = GLITCH_DEFAULTS.seed;
 
-  signatureInput.value = glitch.signatureText;
-  corruptLengthInput.value = String(glitch.length);
   glitchInput.value = String(glitch.amount);
   glitchValue.textContent = `${glitch.amount}%`;
+  maxOffsetInput.value = String(glitch.maxOffset);
+  maxOffsetValue.textContent = `±${glitch.maxOffset}`;
   setRangeFill(glitchInput);
+  setRangeFill(maxOffsetInput);
+  updateTickStates(glitchInput, glitchTicks);
+  updateTickStates(maxOffsetInput, maxOffsetTicks);
 
   savePrefs();
   rebuild();
@@ -182,7 +174,6 @@ window.addEventListener("resize", () => {
 async function loadDfont(file) {
   currentFile = file;
   fileName.textContent = file.name;
-  log.textContent = "Reading .dfont…";
 
   try {
     originalBuffer = await file.arrayBuffer();
@@ -193,7 +184,6 @@ async function loadDfont(file) {
     originalBuffer = null;
     showPhraseError("Could not read file", String(error.message || error));
     typeBody.innerHTML = `<div class="empty"><div>—</div></div>`;
-    log.textContent = String(error.stack || error.message || error);
   }
 }
 
@@ -214,10 +204,9 @@ function rebuild() {
   try {
     const result = corruptDfontBytes(originalBuffer, targets, edits);
     corruptedBuffer = result.buffer;
-    corruptionInfo = result.info;
   } catch (error) {
     corruptedBuffer = originalBuffer;
-    corruptionInfo = { byStrike: [], totalMutated: 0, error: String(error.message || error) };
+    console.error(error);
   }
 
   const clean = buildDescriptors(originalBuffer);
@@ -238,7 +227,6 @@ function rebuild() {
 
   setupResSlider();
   updateDownloadLink();
-  updateLog();
 
   if (!strikes.length) {
     const message = dirty.error
@@ -404,7 +392,8 @@ function discoverStrikeTargets(buffer) {
           label: `sfnt ${resource.id} / ${strike.ppemY}px`,
           resourceId: resource.id,
           scopeStart: resource.absoluteDataOffset + strike.dataStart,
-          scopeEnd: resource.absoluteDataOffset + strike.dataEnd
+          scopeEnd: resource.absoluteDataOffset + strike.dataEnd,
+          boundarySearchEnd: resource.absoluteDataEnd
         });
       });
     } catch (error) {
@@ -421,7 +410,8 @@ function discoverStrikeTargets(buffer) {
         label: `NFNT ${resource.id} / ${nfnt.fRectHeight}px`,
         resourceId: resource.id,
         scopeStart: resource.absoluteDataOffset + nfnt.bitImageOffset,
-        scopeEnd: resource.absoluteDataOffset + nfnt.bitImageOffset + nfnt.bitImageBytes
+        scopeEnd: resource.absoluteDataOffset + nfnt.bitImageOffset + nfnt.bitImageBytes,
+        boundarySearchEnd: resource.absoluteDataEnd
       });
     } catch (error) {
       /* dummy NFNT — skip */
@@ -454,16 +444,11 @@ function setupResSlider() {
   strikes.forEach((strike, index) => {
     const span = document.createElement("span");
     span.textContent = String(strike.pixelSize);
+    const tickPosition = count > 1 ? (index / (count - 1)) * 100 : 50;
+    span.style.setProperty("--tick-position", `${tickPosition}%`);
     span.classList.toggle("on", index === selectedIndex);
     resTicks.appendChild(span);
   });
-
-  if (count === 1) {
-    const note = document.createElement("span");
-    note.textContent = "single strike";
-    note.style.opacity = "0.7";
-    resTicks.appendChild(note);
-  }
 
   setRangeFill(resInput);
   updateResReadout();
@@ -477,7 +462,7 @@ function updateResReadout() {
 }
 
 function updateAllRangeFills() {
-  [resInput, phraseHeightInput, typeHeightInput, glitchInput].forEach(setRangeFill);
+  [resInput, phraseHeightInput, typeHeightInput, glitchInput, maxOffsetInput].forEach(setRangeFill);
 }
 
 function initRangeVisuals() {
@@ -497,9 +482,23 @@ function setRangeFill(input) {
   const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
   const slider = input.closest(".slider-control");
   if (slider) {
-    slider.style.setProperty("--fill", `${clamp(pct, 0, 100)}%`);
+    const clampedPct = clamp(pct, 0, 100);
+    const thumbCorrection = clampedPct * 0.19;
+    const fillCorrection = 9.5 - thumbCorrection;
+    slider.style.setProperty("--thumb-left", `calc(${clampedPct}% - ${thumbCorrection}px)`);
+    slider.style.setProperty("--fill-end", `calc(${clampedPct}% + ${fillCorrection}px)`);
     slider.classList.toggle("disabled", input.disabled);
   }
+}
+
+function updateTickStates(input, ticks) {
+  if (!ticks) {
+    return;
+  }
+  const value = Number(input.value);
+  [...ticks.children].forEach(tick => {
+    tick.classList.toggle("on", Number(tick.dataset.value) === value);
+  });
 }
 
 /* ---------- rendering ---------- */
@@ -551,6 +550,9 @@ function renderPhrase(strike) {
   const caret = document.createElement("span");
   caret.className = "phrase-caret";
   caret.style.height = `${phraseHeight}px`;
+  const inkCenter = (run.inkTop + run.inkBottom) / 2;
+  const canvasCenter = run.nativeH / 2;
+  caret.style.transform = `translateY(${(inkCenter - canvasCenter) * scale}px)`;
   line.appendChild(caret);
   stack.appendChild(line);
 
@@ -749,6 +751,9 @@ function drawRun(strike, codes, maxNativeWidth, extraGap, options = {}) {
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = INK;
+  let inkTop = nativeH / 2;
+  let inkBottom = nativeH / 2;
+  let hasInk = false;
 
   for (const placement of placements) {
     const cell = placement.pixelCell;
@@ -761,12 +766,15 @@ function drawRun(strike, codes, maxNativeWidth, extraGap, options = {}) {
       for (let x = 0; x < cell.width; x++) {
         if (cell.pixel(x, y)) {
           ctx.fillRect(destX + x, destY + y, 1, 1);
+          inkTop = hasInk ? Math.min(inkTop, destY + y) : destY + y;
+          inkBottom = hasInk ? Math.max(inkBottom, destY + y + 1) : destY + y + 1;
+          hasInk = true;
         }
       }
     }
   }
 
-  return { canvas, nativeW, nativeH };
+  return { canvas, nativeW, nativeH, inkTop, inkBottom };
 }
 
 function styleCanvas(run, scale) {
@@ -774,7 +782,7 @@ function styleCanvas(run, scale) {
   run.canvas.style.height = `${run.nativeH * scale}px`;
 }
 
-/* ---------- download + log ---------- */
+/* ---------- download ---------- */
 function updateDownloadLink() {
   if (corruptedObjectUrl) {
     URL.revokeObjectURL(corruptedObjectUrl);
@@ -801,32 +809,6 @@ function makeCorruptedDfontName(name) {
   return `${name}-glitched.dfont`;
 }
 
-function updateLog() {
-  if (!currentFile) {
-    return;
-  }
-
-  const lines = [
-    `file: ${currentFile.name}`,
-    `bytes: ${currentFile.size}`,
-    `strikes: ${strikes.length}`,
-    `selected: ${strikes[selectedIndex] ? strikes[selectedIndex].label + " (" + strikes[selectedIndex].pixelSize + "px)" : "—"}`,
-    `cap height: text ${phraseHeight}px / typeface ${typeHeight}px`,
-    ""
-  ];
-
-  if (corruptionInfo && corruptionInfo.error) {
-    lines.push(`corruption error: ${corruptionInfo.error}`);
-  } else if (corruptionInfo) {
-    lines.push(`mutation: ${glitch.amount}%`);
-    lines.push(`signature: ${glitch.signatureText.trim() || "(empty)"}`);
-    lines.push(`total mutated bytes: ${corruptionInfo.totalMutated}`);
-    lines.push(`seed: 0x${(glitch.seed >>> 0).toString(16)}`);
-  }
-
-  log.textContent = lines.join("\n");
-}
-
 /* ---------- helpers ---------- */
 function showPhraseError(title, detail) {
   phraseBody.innerHTML =
@@ -846,9 +828,8 @@ function savePrefs() {
       phrase: previewTextInput.value,
       phraseHeight: phraseHeight,
       typeHeight: typeHeight,
-      signatureText: glitch.signatureText,
-      length: glitch.length,
-      amount: glitch.amount
+      amount: glitch.amount,
+      maxOffset: glitch.maxOffset
     }));
   } catch (error) {
     /* ignore storage failures */
@@ -883,17 +864,14 @@ function restorePrefs() {
     typeHeightInput.value = th;
     typeHeightReadout.textContent = `${th} px`;
   }
-  if (typeof saved.signatureText === "string") {
-    glitch.signatureText = saved.signatureText;
-    signatureInput.value = saved.signatureText;
-  }
-  if (Number.isFinite(saved.length)) {
-    glitch.length = saved.length;
-    corruptLengthInput.value = String(saved.length);
-  }
   if (Number.isFinite(saved.amount)) {
-    glitch.amount = saved.amount;
-    glitchInput.value = String(saved.amount);
-    glitchValue.textContent = `${saved.amount}%`;
+    glitch.amount = clamp(saved.amount, 0, 30);
+    glitchInput.value = String(glitch.amount);
+    glitchValue.textContent = `${glitch.amount}%`;
+  }
+  if (Number.isFinite(saved.maxOffset)) {
+    glitch.maxOffset = clamp(saved.maxOffset, 1, 128);
+    maxOffsetInput.value = String(glitch.maxOffset);
+    maxOffsetValue.textContent = `±${glitch.maxOffset}`;
   }
 }

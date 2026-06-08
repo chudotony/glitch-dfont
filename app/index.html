@@ -10,20 +10,51 @@
     :root {
       color-scheme: light;
       --desktop: #b9b9b9;
-      --chrome: #c7c7c7;
-      --chrome-2: #b9b9b9;
-      --chrome-3: #d6d6d6;
+      --chrome: #CECECE;
+      --surface-flat: #C2C2C2;
+      --chrome-2: var(--surface-flat);
+      --chrome-3: var(--surface-flat);
       --hi: #f2f2f2;
       --lo: #777777;
-      --deep: #3f3f3f;
-      --ink: #404040;
-      --muted: #747474;
+      --deep: #242424;
+      --ink: #383838;
+      --muted: #787878;
       --soft-line: #8c8c8c;
-      --lcd: #bdbdbd;
-      --lcd-dark: #b2b2b2;
-      --accent: #d28a1e;
+      --lcd: var(--surface-flat);
+      --lcd-dark: var(--surface-flat);
+      --accent: #E09C31;
       --danger: #575757;
+      --bevel-hi: #e7e7e7;
+      --bevel-lo: #747474;
+      --dock-bevel-lo: #6d6d6d;
+      --popover-bevel-lo: #4d4d4d;
+      --popover-shadow: #868686;
+      --section-line: #858585;
+      --inset-lo: #8b8b8b;
+      --inset-hi: #eeeeee;
+      --input-inset-lo: #9f9f9f;
+      --control-bevel-lo: #8a8a8a;
+      --control-bevel-hi: #d7d7d7;
+      --tick-mark: #5f5f5f;
       --dock-h: 82px;
+      --raised-bevel:
+        inset 1px 1px 0 var(--bevel-hi),
+        inset -1px -1px 0 var(--bevel-lo);
+      --dock-bevel:
+        inset 1px 1px 0 var(--bevel-hi),
+        inset -1px -1px 0 var(--dock-bevel-lo);
+      --screen-body-bevel:
+        inset 1px 0 0 var(--inset-lo),
+        inset -1px -1px 0 var(--inset-hi);
+      --control-bevel:
+        inset -1px -1px 0 var(--control-bevel-lo),
+        inset 1px 1px 0 var(--control-bevel-hi);
+      --pressed-bevel: inset 1px 1px 0 var(--inset-lo);
+      --input-bevel: inset 1px 1px 0 var(--input-inset-lo);
+      --popover-bevel:
+        inset 1px 1px 0 var(--bevel-hi),
+        inset -1px -1px 0 var(--popover-bevel-lo),
+        4px 4px 0 var(--popover-shadow);
     }
 
     * { box-sizing: border-box; }
@@ -60,9 +91,7 @@
       border-right-color: var(--lo);
       border-bottom-color: var(--lo);
       background: var(--chrome);
-      box-shadow:
-        inset 1px 1px 0 #e7e7e7,
-        inset -1px -1px 0 #747474;
+      box-shadow: var(--raised-bevel);
     }
 
     .topbar h1 {
@@ -118,15 +147,19 @@
     .screen {
       min-width: 0;
       flex: 0 0 auto;
+      min-height: 50%;
       display: flex;
       flex-direction: column;
       border: 1px solid var(--lo);
       border-top-color: var(--hi);
       border-left-color: var(--hi);
+      border-right-color: var(--lo);
+      border-bottom-color: var(--lo);
       background: var(--chrome);
+      box-shadow: var(--raised-bevel);
     }
 
-    .screen:last-child { border-bottom: none; }
+    .screen:last-child { border-bottom-color: var(--lo); }
 
     .screen-head {
       position: sticky;
@@ -148,7 +181,7 @@
       font-weight: 300;
       letter-spacing: 0;
       text-shadow: 1px 1px 0 var(--hi);
-      box-shadow: inset 0 1px 0 #e7e7e7;
+      box-shadow: inset 0 1px 0 var(--bevel-hi);
     }
 
     .screen-head::after {
@@ -158,7 +191,7 @@
       right: 8px;
       bottom: -1px;
       height: 2px;
-      background: #858585;
+      background: var(--section-line);
       pointer-events: none;
     }
 
@@ -195,8 +228,8 @@
     }
 
     .screen-body {
-      flex: 1 1 auto;
-      min-height: 220px;
+      flex: 1 0 auto;
+      min-height: 0;
       margin: 0 8px 8px;
       padding: 14px;
       border: 1px solid var(--soft-line);
@@ -205,7 +238,7 @@
       border-right-color: var(--hi);
       border-bottom-color: var(--hi);
       background: var(--lcd);
-      box-shadow: inset 1px 0 0 #8b8b8b, inset -1px -1px 0 #eeeeee;
+      box-shadow: var(--screen-body-bevel);
     }
 
     /* glyph canvases */
@@ -297,9 +330,7 @@
       border-top-color: var(--hi);
       border-left-color: var(--hi);
       background: var(--chrome);
-      box-shadow:
-        inset 1px 1px 0 #e7e7e7,
-        inset -1px -1px 0 #6d6d6d;
+      box-shadow: var(--dock-bevel);
     }
 
     .dock-cell {
@@ -308,15 +339,14 @@
       justify-content: center;
       gap: 5px;
       padding: 8px 10px;
-      border-right: 1px solid var(--lo);
+      border-right: 2px solid var(--lo);
       box-shadow: inset 1px 0 0 var(--hi);
     }
 
-    .dock-cell.grow { flex: 1 1 auto; min-width: 0; }
-    .dock-cell.res { flex: 1.4 1 0; min-width: 190px; }
-    .dock-cell.height { flex: 1 1 0; min-width: 150px; }
+    .dock-cell.res { flex: 0 1 230px; min-width: 190px; }
+    .dock-cell.glitch { flex: 1 1 190px; min-width: 180px; }
     .dock-cell.file { flex: 0 0 auto; min-width: 138px; }
-    .dock-cell.adv { border-right: none; justify-content: center; }
+    .dock-cell.actions { flex: 0 0 270px; border-right: none; }
 
     .dock label {
       display: flex;
@@ -358,7 +388,7 @@
       letter-spacing: 0;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: inset -1px -1px 0 var(--lo), inset 1px 1px 0 #e7e7e7;
+      box-shadow: inset -1px -1px 0 var(--lo), inset 1px 1px 0 var(--bevel-hi);
       white-space: nowrap;
     }
     .dock .file-btn .arrow { font-size: 12px; line-height: 1; transform: translateY(-1px); }
@@ -368,7 +398,7 @@
       border-left-color: var(--lo);
       border-right-color: var(--hi);
       border-bottom-color: var(--hi);
-      box-shadow: inset 1px 1px 0 #8b8b8b;
+      box-shadow: var(--pressed-bevel);
       transform: translate(1px, 1px);
     }
 
@@ -385,7 +415,23 @@
       color: var(--ink);
       font: inherit;
       font-weight: 900;
-      box-shadow: inset 1px 1px 0 #9f9f9f;
+      box-shadow: var(--input-bevel);
+    }
+
+    .preview-text-proxy {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: none;
     }
 
     /* range with ticks */
@@ -396,7 +442,8 @@
     }
 
     .slider-control {
-      --fill: 50%;
+      --fill-end: 50%;
+      --thumb-left: calc(50% - 9.5px);
       position: relative;
       display: block;
       width: 100%;
@@ -430,15 +477,24 @@
       position: absolute;
       z-index: 1;
       top: 3px;
-      left: clamp(0px, calc(var(--fill) - 9px), calc(100% - 19px));
+      left: var(--thumb-left);
       width: 19px;
       height: 19px;
       border: 1px solid var(--lo);
       border-top-color: var(--hi);
       border-left-color: var(--hi);
       background: var(--chrome-3);
-      box-shadow: inset -1px -1px 0 #8a8a8a, inset 1px 1px 0 #d7d7d7;
+      box-shadow: var(--control-bevel);
       pointer-events: none;
+    }
+
+    .slider-control:has(input[type="range"]:active)::after {
+      top: 4px;
+      border-top-color: var(--lo);
+      border-left-color: var(--lo);
+      border-right-color: var(--hi);
+      border-bottom-color: var(--hi);
+      box-shadow: var(--pressed-bevel);
     }
 
     .slider-control.disabled {
@@ -448,7 +504,7 @@
     .slider-fill-visual {
       display: flex;
       gap: 2px;
-      width: var(--fill);
+      width: var(--fill-end);
       height: 100%;
       overflow: hidden;
       pointer-events: none;
@@ -494,17 +550,17 @@
     }
 
     input[type="range"]::-moz-range-thumb {
-      width: 17px;
-      height: 17px;
+      width: 19px;
+      height: 19px;
       border: 0;
       background: transparent;
       border-radius: 0;
     }
 
     .ticks {
-      display: flex;
-      justify-content: space-between;
-      gap: 2px;
+      position: relative;
+      height: 14px;
+      margin: 0 9.5px;
       font-size: 8px;
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
       font-weight: 700;
@@ -512,9 +568,14 @@
       color: var(--muted);
       font-variant-numeric: tabular-nums;
     }
-    .ticks span { flex: 1 1 0; text-align: center; white-space: nowrap; }
-    .ticks span:first-child { text-align: left; }
-    .ticks span:last-child { text-align: right; }
+    .ticks span {
+      position: absolute;
+      left: var(--tick-position, 0%);
+      top: 0;
+      transform: translateX(-50%);
+      text-align: center;
+      white-space: nowrap;
+    }
     .ticks span.on { color: var(--ink); }
     .ticks span::before {
       content: "";
@@ -522,10 +583,8 @@
       width: 1px;
       height: 5px;
       margin: 0 auto 2px;
-      background: #5f5f5f;
+      background: var(--tick-mark);
     }
-    .ticks span:first-child::before { margin-left: 0; }
-    .ticks span:last-child::before { margin-right: 0; }
     .ticks.disabled span { opacity: 0.4; }
 
     button {
@@ -540,7 +599,7 @@
       letter-spacing: 0;
       cursor: pointer;
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
-      box-shadow: inset -1px -1px 0 #8a8a8a, inset 1px 1px 0 #d7d7d7;
+      box-shadow: var(--control-bevel);
       min-height: 30px;
       padding: 0 10px;
       white-space: nowrap;
@@ -550,7 +609,7 @@
       border-left-color: var(--lo);
       border-right-color: var(--hi);
       border-bottom-color: var(--hi);
-      box-shadow: inset 1px 1px 0 #8b8b8b;
+      box-shadow: var(--pressed-bevel);
       transform: translate(1px, 1px);
     }
     button.ghost { background: var(--chrome); color: var(--ink); }
@@ -563,75 +622,38 @@
       border-bottom-color: var(--hi);
     }
 
-    /* ---------- advanced popover ---------- */
-    .adv-panel {
-      position: absolute;
-      right: 14px;
-      bottom: calc(var(--dock-h) + 8px);
-      z-index: 20;
-      width: 340px;
-      max-width: calc(100vw - 28px);
-      max-height: calc(100vh - var(--dock-h) - 24px);
-      overflow-y: auto;
+    .dock-actions {
       display: grid;
-      gap: 10px;
-      padding: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+    }
+    .dock-actions button,
+    .dock-actions .download {
+      min-width: 0;
+      min-height: 30px;
+      padding: 0 7px;
       border: 1px solid var(--lo);
       border-top-color: var(--hi);
       border-left-color: var(--hi);
-      background: var(--chrome);
-      box-shadow:
-        inset 1px 1px 0 #e7e7e7,
-        inset -1px -1px 0 #4d4d4d,
-        4px 4px 0 #868686;
-    }
-    .adv-panel[hidden] { display: none; }
-
-    .adv-panel h2 {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 400;
-      letter-spacing: 0;
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--lo);
-      padding-bottom: 6px;
-      color: var(--muted);
-      text-shadow: 1px 1px 0 var(--hi);
-    }
-
-    .adv-panel label {
-      display: grid;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 9px;
+      background: var(--chrome-3);
+      color: var(--deep);
+      box-shadow: var(--control-bevel);
+      font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
+      font-size: 10px;
       font-weight: 900;
+      line-height: 1;
       letter-spacing: 0;
-      text-transform: uppercase;
+      white-space: nowrap;
     }
-    .adv-panel label .readout { color: var(--ink); }
-
-    .adv-panel input[type="text"],
-    .adv-panel input[type="number"] {
-      width: 100%;
-      min-height: 28px;
-      padding: 0 8px;
-      border: 1px solid var(--soft-line);
+    .dock-actions .reroll { background: var(--chrome-2); }
+    .dock-actions .download:active {
       border-top-color: var(--lo);
       border-left-color: var(--lo);
       border-right-color: var(--hi);
       border-bottom-color: var(--hi);
-      background: var(--lcd);
-      color: var(--ink);
-      font: inherit;
-      font-weight: 900;
+      box-shadow: var(--pressed-bevel);
+      transform: translate(1px, 1px);
     }
-
-    .adv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-    .adv-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-    .adv-actions button { flex: 1 1 0; min-width: 96px; }
-    .adv-actions .download { flex: 1 1 100%; }
-    .adv-actions .reroll { background: var(--chrome-2); }
 
     .download {
       display: inline-flex;
@@ -639,9 +661,9 @@
       justify-content: center;
       min-height: 30px;
       padding: 0 10px;
-      border: 1px dashed var(--deep);
+      border: 1px solid var(--lo);
       color: var(--deep);
-      background: var(--lcd);
+      background: var(--chrome-3);
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 0;
@@ -649,22 +671,6 @@
       text-align: center;
     }
     .download[hidden] { display: none; }
-
-    .adv-panel pre {
-      margin: 0;
-      max-height: 118px;
-      overflow: auto;
-      padding: 8px;
-      border: 1px solid var(--soft-line);
-      border-top-color: var(--lo);
-      border-left-color: var(--lo);
-      border-right-color: var(--hi);
-      border-bottom-color: var(--hi);
-      background: var(--lcd);
-      font-size: 10px;
-      line-height: 1.4;
-      color: var(--muted);
-    }
 
     @media (max-width: 720px) {
       body { padding: 0; }
@@ -691,9 +697,10 @@
       .head-cap .slider-control { width: 110px; max-width: 44vw; }
       .screen-body { margin: 6px; padding: 10px; }
       .dock { flex-wrap: wrap; min-height: 0; }
-      .dock-cell { flex: 1 1 128px; border-bottom: 1px solid var(--lo); }
+      .dock-cell { flex: 1 1 128px; border-right-width: 2px; border-bottom: 2px solid var(--lo); }
       .dock-cell.file { min-width: 132px; }
       .dock-cell.res { min-width: 100%; }
+      .dock-cell.actions { flex-basis: 270px; }
     }
   </style>
 </head>
@@ -720,6 +727,7 @@
           <div><strong>Upload a .dfont</strong><br />to glitch its bitmap strikes.</div>
         </div>
       </div>
+      <input id="previewText" class="preview-text-proxy" type="text" value="Glitch" autocomplete="off" spellcheck="false" aria-label="Your text" />
     </section>
 
     <section class="screen" data-screen-label="Typeface">
@@ -748,11 +756,6 @@
       <input id="fileInput" type="file" accept=".dfont,.rsrc,application/octet-stream" />
     </div>
 
-    <div class="dock-cell grow phrase">
-      <label for="previewText">Your text</label>
-      <input id="previewText" type="text" value="Glitch" autocomplete="off" spellcheck="false" />
-    </div>
-
     <div class="dock-cell res">
       <label>Resolution <span id="resReadout" class="readout">—</span></label>
       <div class="range-wrap">
@@ -764,41 +767,54 @@
       </div>
     </div>
 
-    <div class="dock-cell adv">
-      <button id="advToggle" type="button" class="ghost" aria-expanded="false">Glitch ▸</button>
-    </div>
-  </footer>
-
-  <div id="advPanel" class="adv-panel" hidden>
-    <h2>Glitch — all strikes</h2>
-
-    <label>
-      Signature (hex)
-      <input id="signatureInput" type="text" value="00 01 01 00 01" autocomplete="off" spellcheck="false" />
-    </label>
-
-    <div class="adv-row">
-      <label>
-        Length
-        <input id="corruptLengthInput" type="number" min="0" max="4096" step="1" value="96" />
+    <div class="dock-cell glitch">
+      <label for="glitchInput">
+        Glitch probability <span id="glitchValue" class="readout">0%</span>
       </label>
-      <label>
-        Mutation <span id="glitchValue" class="readout">0%</span>
+      <div class="range-wrap">
         <span class="slider-control">
           <span class="slider-track-visual"><span class="slider-fill-visual"></span></span>
-          <input id="glitchInput" type="range" min="0" max="100" value="0" />
+          <input id="glitchInput" type="range" min="0" max="30" step="1" value="0" />
         </span>
+        <div id="glitchTicks" class="ticks">
+          <span data-value="0" style="--tick-position: 0%">0</span>
+          <span data-value="5" style="--tick-position: 16.6667%">5</span>
+          <span data-value="10" style="--tick-position: 33.3333%">10</span>
+          <span data-value="15" style="--tick-position: 50%">15</span>
+          <span data-value="20" style="--tick-position: 66.6667%">20</span>
+          <span data-value="25" style="--tick-position: 83.3333%">25</span>
+          <span data-value="30" style="--tick-position: 100%">30</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dock-cell glitch">
+      <label for="maxOffsetInput">
+        Maximum offset <span id="maxOffsetValue" class="readout">±32</span>
       </label>
+      <div class="range-wrap">
+        <span class="slider-control">
+          <span class="slider-track-visual"><span class="slider-fill-visual"></span></span>
+          <input id="maxOffsetInput" type="range" min="1" max="128" step="1" value="32" />
+        </span>
+        <div id="maxOffsetTicks" class="ticks">
+          <span data-value="1" style="--tick-position: 0%">1</span>
+          <span data-value="32" style="--tick-position: 24.4094%">32</span>
+          <span data-value="64" style="--tick-position: 49.6063%">64</span>
+          <span data-value="96" style="--tick-position: 74.8031%">96</span>
+          <span data-value="128" style="--tick-position: 100%">128</span>
+        </div>
+      </div>
     </div>
 
-    <div class="adv-actions">
-      <button id="rerollButton" type="button" class="reroll">Re-glitch</button>
-      <button id="resetButton" type="button" class="ghost">Reset</button>
-      <a id="downloadDfont" class="download" href="#" download hidden>Download .dfont</a>
+    <div class="dock-cell actions">
+      <div class="dock-actions">
+        <button id="resetButton" type="button" class="ghost">Reset</button>
+        <button id="rerollButton" type="button" class="reroll">Re-glitch</button>
+        <a id="downloadDfont" class="download" href="#" download hidden>Download</a>
+      </div>
     </div>
-
-    <pre id="log">Upload a .dfont file.</pre>
-  </div>
+  </footer>
 
   <script src="font-core.js"></script>
   <script src="app.js"></script>

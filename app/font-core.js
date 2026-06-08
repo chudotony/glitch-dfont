@@ -9,36 +9,58 @@
    Byte corruption
 ------------------------------------------------------- */
 
+const GLITCH_START_SIGNATURE = Object.freeze([0x00, 0x01, 0x01, 0x00, 0x01]);
+const GLITCH_END_SIGNATURE = Object.freeze([0x00, 0x01, 0x00, 0x00, 0x00, 0x01]);
+
 function corruptDfontBytes(buffer, targets, edits) {
   const bytes = new Uint8Array(buffer.slice(0));
   const byStrike = [];
   let totalMutated = 0;
 
   for (const target of targets) {
-    const edit = edits.get(target.key) || { signatureText: "", length: 0, amount: 0, seed: 0 };
-    const signature = parseHexBytes(edit.signatureText);
+    const edit = edits.get(target.key) || { amount: 0, maxOffset: 1, seed: 0 };
     const scopeStart = clamp(target.scopeStart, 0, bytes.length);
     const scopeEnd = clamp(target.scopeEnd, scopeStart, bytes.length);
-    const matches = signature.length === 0 ? [] : findSignatureOffsets(bytes, signature, scopeStart, scopeEnd);
-    const signatureOffset = matches.length > 0 ? matches[0] : -1;
+    const boundarySearchEnd = clamp(target.boundarySearchEnd ?? scopeEnd, scopeEnd, bytes.length);
+    const startMatches = findSignatureOffsets(bytes, GLITCH_START_SIGNATURE, scopeStart, scopeEnd);
+    const startSignatureOffset = startMatches.length > 0 ? startMatches[0] : -1;
+    const contentStart = startSignatureOffset >= 0
+      ? startSignatureOffset + GLITCH_START_SIGNATURE.length
+      : -1;
+    const endMatches = contentStart >= 0
+      ? findSignatureOffsets(bytes, GLITCH_END_SIGNATURE, contentStart, boundarySearchEnd)
+      : [];
+    const endSignatureOffset = endMatches.length > 0 ? endMatches[0] : -1;
+    const contentEnd = endSignatureOffset >= contentStart
+      ? endSignatureOffset
+      : scopeEnd;
     let mutated = 0;
     let actualLength = 0;
 
-    if (signatureOffset >= 0 && edit.length > 0 && edit.amount > 0) {
-      const start = signatureOffset + signature.length;
-      actualLength = Math.min(edit.length, Math.max(0, scopeEnd - start));
-      mutated = mutateByteRange(bytes, start, actualLength, edit.amount / 100, edit.seed);
-    } else if (signatureOffset >= 0) {
-      actualLength = Math.min(edit.length, Math.max(0, scopeEnd - signatureOffset - signature.length));
+    if (contentStart >= 0 && contentEnd >= contentStart) {
+      actualLength = contentEnd - contentStart;
+      if (edit.amount > 0) {
+        mutated = mutateByteRange(
+          bytes,
+          contentStart,
+          actualLength,
+          edit.amount / 100,
+          edit.maxOffset,
+          edit.seed
+        );
+      }
     }
 
     totalMutated += mutated;
     byStrike.push({
       key: target.key,
       label: target.label,
-      matches: matches.length,
-      signatureOffset,
-      offset: signatureOffset >= 0 ? signatureOffset + signature.length : -1,
+      startMatches: startMatches.length,
+      endMatches: endMatches.length,
+      startSignatureOffset,
+      endSignatureOffset,
+      usedScopeEndFallback: endSignatureOffset < contentStart,
+      offset: contentStart,
       length: actualLength,
       mutated
     });
@@ -47,8 +69,9 @@ function corruptDfontBytes(buffer, targets, edits) {
   return { buffer: bytes.buffer, info: { byStrike, totalMutated } };
 }
 
-function mutateByteRange(bytes, start, length, amount, seed) {
+function mutateByteRange(bytes, start, length, amount, maxOffset, seed) {
   const random = mulberry32(seed);
+  const offsetLimit = clamp(Math.floor(Number(maxOffset) || 1), 1, 128);
   let mutated = 0;
 
   for (let i = 0; i < length; i++) {
@@ -57,15 +80,11 @@ function mutateByteRange(bytes, start, length, amount, seed) {
     }
 
     const offset = start + i;
-    const mode = Math.floor(random() * 3);
-
-    if (mode === 0) {
-      bytes[offset] ^= 1 << Math.floor(random() * 8);
-    } else if (mode === 1) {
-      bytes[offset] = Math.floor(random() * 256);
-    } else {
-      bytes[offset] = (bytes[offset] + Math.floor(random() * 65) - 32) & 0xff;
-    }
+    const randomOffsetIndex = Math.floor(random() * offsetLimit * 2);
+    const signedOffset = randomOffsetIndex < offsetLimit
+      ? randomOffsetIndex - offsetLimit
+      : randomOffsetIndex - offsetLimit + 1;
+    bytes[offset] = (bytes[offset] + signedOffset + 256) & 0xff;
 
     mutated += 1;
   }
