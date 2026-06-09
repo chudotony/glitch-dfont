@@ -19,6 +19,8 @@ const typeHeightInput = document.getElementById("typeHeightInput");
 const typeHeightReadout = document.getElementById("typeHeightReadout");
 const phraseBody = document.getElementById("phraseBody");
 const typeBody = document.getElementById("typeBody");
+const topbar = document.querySelector(".topbar");
+const dock = document.querySelector(".dock");
 
 const glitchInput = document.getElementById("glitchInput");
 const glitchValue = document.getElementById("glitchValue");
@@ -62,6 +64,13 @@ restorePrefs();
 updateAllRangeFills();
 updateTickStates(glitchInput, glitchTicks);
 updateTickStates(maxOffsetInput, maxOffsetTicks);
+
+const chromeObserver = new ResizeObserver(() => {
+  document.documentElement.style.setProperty("--topbar-h", `${topbar.offsetHeight}px`);
+  document.documentElement.style.setProperty("--dock-h", `${dock.offsetHeight}px`);
+});
+chromeObserver.observe(topbar);
+chromeObserver.observe(dock);
 
 /* ---------- listeners ---------- */
 fileInput.addEventListener("change", async () => {
@@ -465,7 +474,7 @@ function setupResSlider() {
 function updateResReadout() {
   const strike = strikes[selectedIndex];
   resReadout.textContent = strike
-    ? `${strike.pixelSize}px · ${strike.glyphCount} glyphs`
+    ? `${strike.pixelSize}px`
     : "—";
 }
 
@@ -549,28 +558,30 @@ function renderPhrase(strike) {
 
   const line = document.createElement("div");
   line.className = "phrase-line";
+  const visualDrop = 8;
   if (hasText) {
     styleCanvas(run, scale);
+    const inkCenter = (run.inkTop + run.inkBottom) / 2;
+    const canvasCenter = run.nativeH / 2;
+    const inkOffset = Number.isFinite(inkCenter) ? (inkCenter - canvasCenter) * scale : 0;
+    run.canvas.style.transform = `translateY(${-inkOffset}px)`;
     line.appendChild(run.canvas);
+  } else {
+    const hint = document.createElement("div");
+    hint.className = "phrase-hint";
+    hint.textContent = "Type here";
+    line.appendChild(hint);
   }
 
   // Blinking caret so the preview reads as an editable field — typing lands
   // right where the glitched letters appear.
   const caret = document.createElement("span");
   caret.className = "phrase-caret";
-  caret.style.height = `${phraseHeight}px`;
-  const inkCenter = (run.inkTop + run.inkBottom) / 2;
-  const canvasCenter = run.nativeH / 2;
-  caret.style.transform = `translateY(${(inkCenter - canvasCenter) * scale}px)`;
+  const visibleInkHeight = Math.max(1, (run.inkBottom - run.inkTop) * scale);
+  caret.style.height = `${hasText ? visibleInkHeight : 20}px`;
+  line.style.transform = `translateY(${visualDrop}px)`;
   line.appendChild(caret);
   stack.appendChild(line);
-
-  if (!hasText) {
-    const hint = document.createElement("div");
-    hint.className = "phrase-hint";
-    hint.textContent = "type here";
-    stack.appendChild(hint);
-  }
 
   phraseBody.appendChild(stack);
 }
@@ -600,10 +611,7 @@ function renderTypeface(strike) {
     label.className = "spec-label";
     const name = document.createElement("span");
     name.textContent = section.name;
-    const count = document.createElement("span");
-    count.className = "count";
-    count.textContent = String(section.codes.length);
-    label.append(name, count);
+    label.append(name);
 
     const run = drawRun(strike, section.codes, maxNative, extraGap, { layoutStrike, growToFit: true, centerLines: true });
     styleCanvas(run, scale);
@@ -783,7 +791,7 @@ function drawRun(strike, codes, maxNativeWidth, extraGap, options = {}) {
     }
   }
 
-  return { canvas, nativeW, nativeH, inkTop, inkBottom };
+  return { canvas, nativeW, nativeH, inkTop, inkBottom, baseline: ascent };
 }
 
 function styleCanvas(run, scale) {
