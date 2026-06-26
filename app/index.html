@@ -19,6 +19,7 @@
       --deep: #242424;
       --ink: #383838;
       --muted: #787878;
+      --label-muted: #686868;
       --soft-line: #8c8c8c;
       --lcd: var(--surface-flat);
       --lcd-dark: var(--surface-flat);
@@ -40,7 +41,9 @@
       --range-thumb-height: 19px;
       --range-thumb-half: 10.5px;
       --range-bevel-size: 2px;
-      --topbar-h: 36px;
+      --corner-button-offset: 8px;
+      --corner-button-top: calc((var(--topbar-h) - 20px) / 2);
+      --topbar-h: 48px;
       --dock-h: 82px;
       --raised-bevel:
         inset 2px 2px 0 var(--bevel-hi),
@@ -92,8 +95,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      min-height: 36px;
-      padding: 6px 12px;
+      min-height: 48px;
+      padding: 10px 12px;
       border: 3px solid var(--lo);
       border-top-color: var(--hi);
       border-left-color: var(--hi);
@@ -110,7 +113,7 @@
       transform: translate(-50%, calc(-50% - 2px));
       margin: 0;
       color: var(--deep);
-      font-size: 21px;
+      font-size: 20px;
       line-height: 1;
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
       font-weight: 700;
@@ -123,8 +126,11 @@
       position: absolute;
       left: 12px;
       top: 50%;
-      transform: translateY(calc(-50% - 2px));
-      padding: 3px 6px;
+      transform: translateY(-50%);
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 6px;
       border: 1px solid var(--soft-line);
       border-top-color: var(--lo);
       border-left-color: var(--lo);
@@ -141,6 +147,167 @@
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: min(24vw, 240px);
+    }
+
+    .info-toggle {
+      position: fixed;
+      top: var(--corner-button-top);
+      right: var(--corner-button-offset);
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      min-width: 20px;
+      height: 20px;
+      min-height: 20px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background-color: var(--chrome-3);
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo));
+      background-position:
+        left top,
+        left var(--range-bevel-size),
+        left bottom,
+        right var(--range-bevel-size);
+      background-size:
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size)),
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size));
+      background-repeat: no-repeat;
+      box-shadow: none;
+      transform: none;
+      font-size: 16px;
+      line-height: 1;
+      z-index: 7;
+    }
+
+    .info-toggle:active {
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo));
+      box-shadow: none;
+      transform: none;
+    }
+
+    .info-window {
+      position: fixed;
+      z-index: 8;
+      top: 0;
+      right: 0;
+      width: min(500px, 100vw);
+      padding: 0 0 10px;
+      border: 3px solid var(--lo);
+      border-top-color: var(--hi);
+      border-left-color: var(--hi);
+      border-right-color: var(--popover-bevel-lo);
+      border-bottom-color: var(--popover-bevel-lo);
+      background: var(--chrome);
+      box-shadow: none;
+    }
+
+    .info-window[hidden] {
+      display: none;
+    }
+
+    .info-close {
+      position: fixed;
+      z-index: 9;
+      right: var(--corner-button-offset);
+      top: var(--corner-button-top);
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      min-width: 20px;
+      height: 20px;
+      min-height: 20px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background-color: var(--chrome-3);
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo));
+      background-position:
+        left top,
+        left var(--range-bevel-size),
+        left bottom,
+        right var(--range-bevel-size);
+      background-size:
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size)),
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size));
+      background-repeat: no-repeat;
+      box-shadow: none;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .info-close:active {
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo));
+      box-shadow: none;
+      transform: none;
+    }
+
+    .info-panels {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .info-panel {
+      min-height: 100px;
+      padding: 10px 10px 12px;
+      border-bottom: 0;
+      background: var(--chrome);
+      color: var(--label-muted);
+      box-shadow: none;
+    }
+
+    .info-panel:last-child {
+      border-bottom: 0;
+    }
+
+    .info-panel h2 {
+      margin: 0 32px 9px 0;
+      min-height: 20px;
+      display: flex;
+      align-items: center;
+      color: var(--label-muted);
+      font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .info-panel p {
+      margin: 0;
+      min-height: 64px;
+      padding: 8px;
+      border: 2px solid var(--lo);
+      border-top-color: var(--lo);
+      border-left-color: var(--lo);
+      border-right-color: var(--hi);
+      border-bottom-color: var(--hi);
+      background: var(--lcd);
+      color: var(--ink);
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.15;
+      box-shadow: none;
     }
 
     /* ---------- stacked screens: phrase, then full typeface ---------- */
@@ -195,14 +362,7 @@
     }
 
     .screen-head::after {
-      content: "";
-      position: absolute;
-      left: 8px;
-      right: 8px;
-      bottom: -1px;
-      height: 2px;
-      background: var(--section-line);
-      pointer-events: none;
+      content: none;
     }
 
     .screen-head > span {
@@ -283,6 +443,10 @@
     }
     #phraseBody { display: grid; place-items: center; cursor: text; }
     #phraseBody.typing { outline: 1px dotted var(--deep); outline-offset: -5px; }
+    #phraseBody.drag-over {
+      outline: 2px solid var(--accent);
+      outline-offset: -7px;
+    }
     #phraseBody.typing .phrase-caret { animation: caret-blink 1.06s steps(1) infinite; }
     @keyframes caret-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
     .phrase-hint {
@@ -337,6 +501,13 @@
 
     .empty.error strong, .error-text { color: var(--danger); }
 
+    .empty .upload-inline {
+      display: inline;
+      color: var(--deep);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
     /* ---------- bottom dock ---------- */
     .dock {
       position: fixed;
@@ -360,7 +531,7 @@
     .dock-cell {
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 5px;
       padding: 8px 10px;
       border-right: 2px solid var(--lo);
@@ -377,10 +548,10 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 8px;
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--label-muted);
+      font-size: 14px;
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
-      font-weight: 700;
+      font-weight: 400;
       letter-spacing: 0;
       text-transform: uppercase;
     }
@@ -660,7 +831,7 @@
       padding: 0 10px;
       white-space: nowrap;
     }
-    button:active {
+    button:not(.info-toggle):not(.info-close):active {
       border-top-color: var(--lo);
       border-left-color: var(--lo);
       border-right-color: var(--hi);
@@ -803,8 +974,8 @@
     @media (max-width: 720px) {
       body { padding: var(--topbar-h) 0 var(--dock-h); }
       .topbar {
-        min-height: 34px;
-        padding: 5px 8px;
+        min-height: 48px;
+        padding: 10px 8px;
       }
       .topbar h1 { font-size: 18px; }
       .file-name {
@@ -830,13 +1001,218 @@
       .dock-cell.file { min-width: 170px; }
       .dock-cell.actions { flex-basis: 180px; min-width: 170px; }
     }
+
+    .info-window .info-panel h2 {
+      font-size: 14px;
+    }
+
+    .topbar,
+    .info-window,
+    .screen,
+    .screen-head,
+    .screen-body,
+    .dock,
+    .file-name,
+    .info-panel p,
+    input[type="text"],
+    button,
+    .download {
+      border: 0;
+      background-image:
+        linear-gradient(var(--edge-top-color), var(--edge-top-color)),
+        linear-gradient(var(--edge-left-color), var(--edge-left-color)),
+        linear-gradient(var(--edge-bottom-color), var(--edge-bottom-color)),
+        linear-gradient(var(--edge-right-color), var(--edge-right-color));
+      background-position:
+        left top,
+        left top,
+        left bottom,
+        right top;
+      background-size:
+        100% var(--edge-top-size, var(--edge-size)),
+        var(--edge-left-size, var(--edge-size)) 100%,
+        100% var(--edge-bottom-size, var(--edge-size)),
+        var(--edge-right-size, var(--edge-size)) 100%;
+      background-repeat: no-repeat;
+      box-shadow: none;
+    }
+
+    .topbar {
+      --edge-size: 3px;
+      --edge-top-color: var(--hi);
+      --edge-left-color: var(--hi);
+      --edge-right-color: var(--lo);
+      --edge-bottom-color: var(--lo);
+    }
+
+    .info-window {
+      --edge-size: 3px;
+      --edge-top-color: var(--hi);
+      --edge-left-color: var(--hi);
+      --edge-right-color: var(--lo);
+      --edge-bottom-color: var(--lo);
+    }
+
+    .info-panel + .info-panel {
+      background-image: linear-gradient(var(--lo), var(--lo));
+      background-position: left top;
+      background-size: 100% 2px;
+      background-repeat: no-repeat;
+    }
+
+    .screen,
+    .dock {
+      --edge-size: 3px;
+      --edge-top-color: var(--hi);
+      --edge-left-color: var(--hi);
+      --edge-right-color: var(--lo);
+      --edge-bottom-color: var(--lo);
+    }
+
+    .dock {
+      --edge-size: 3px;
+    }
+
+    .screen-head {
+      --edge-size: 3px;
+      --edge-bottom-size: 0px;
+      --edge-top-color: var(--hi);
+      --edge-left-color: var(--hi);
+      --edge-right-color: var(--lo);
+      --edge-bottom-color: transparent;
+    }
+
+    .file-name,
+    input[type="text"] {
+      --edge-top-color: var(--lo);
+      --edge-left-color: var(--lo);
+      --edge-right-color: var(--hi);
+      --edge-bottom-color: var(--hi);
+    }
+
+    .file-name {
+      --edge-size: 2px;
+    }
+
+    input[type="text"] {
+      --edge-size: 1px;
+    }
+
+    .screen-body,
+    .info-panel p {
+      --edge-size: 2px;
+      --edge-top-color: var(--lo);
+      --edge-left-color: var(--lo);
+      --edge-right-color: var(--hi);
+      --edge-bottom-color: var(--hi);
+    }
+
+    button,
+    .download {
+      --edge-size: var(--range-bevel-size);
+      --edge-top-color: var(--hi);
+      --edge-left-color: var(--hi);
+      --edge-right-color: var(--lo);
+      --edge-bottom-color: var(--lo);
+    }
+
+    button:not(.info-toggle):not(.info-close):active,
+    .download:not([aria-disabled="true"]):active {
+      --edge-top-color: var(--lo);
+      --edge-left-color: var(--lo);
+      --edge-right-color: var(--hi);
+      --edge-bottom-color: var(--hi);
+      box-shadow: none;
+    }
+
+    .info-window {
+      border: 0;
+      background-color: var(--chrome);
+      background-image: none;
+      box-shadow: none;
+    }
+
+    .info-window::before,
+    .info-window .info-panel p::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(var(--edge-top-color), var(--edge-top-color)),
+        linear-gradient(var(--edge-left-color), var(--edge-left-color)),
+        linear-gradient(var(--edge-bottom-color), var(--edge-bottom-color)),
+        linear-gradient(var(--edge-right-color), var(--edge-right-color));
+      background-position:
+        left top,
+        left top,
+        left bottom,
+        right top;
+      background-size:
+        100% var(--edge-top-size, var(--edge-size)),
+        var(--edge-left-size, var(--edge-size)) 100%,
+        100% var(--edge-bottom-size, var(--edge-size)),
+        var(--edge-right-size, var(--edge-size)) 100%;
+      background-repeat: no-repeat;
+    }
+
+    .info-window::before {
+      --edge-size: 3px;
+      --edge-top-color: var(--hi);
+      --edge-left-color: var(--hi);
+      --edge-right-color: var(--lo);
+      --edge-bottom-color: var(--lo);
+      z-index: 1;
+    }
+
+    .info-window .info-panel {
+      border: 0;
+    }
+
+    .info-window .info-panel + .info-panel {
+      background-image: linear-gradient(var(--lo), var(--lo));
+      background-position: left top;
+      background-size: 100% 2px;
+      background-repeat: no-repeat;
+    }
+
+    .info-window .info-panel p {
+      position: relative;
+      border: 0;
+      background-color: var(--lcd);
+      background-image: none;
+      box-shadow: none;
+    }
+
+    .info-window .info-panel p::before {
+      --edge-size: 2px;
+      --edge-top-color: var(--lo);
+      --edge-left-color: var(--lo);
+      --edge-right-color: var(--hi);
+      --edge-bottom-color: var(--hi);
+    }
   </style>
 </head>
 <body>
   <header class="topbar">
     <h1>Glitch.dfont</h1>
     <span id="fileName" class="file-name">no file loaded</span>
+    <button id="infoToggle" class="info-toggle" type="button" aria-controls="infoWindow" aria-expanded="false" aria-label="Project info">?</button>
   </header>
+
+  <aside id="infoWindow" class="info-window" hidden aria-label="Project information">
+    <button id="infoClose" class="info-close" type="button" aria-label="Close">X</button>
+    <div class="info-panels">
+      <section class="info-panel" aria-labelledby="instructionTitle">
+        <h2 id="instructionTitle">Instruction</h2>
+        <p>[Instruction placeholder]</p>
+      </section>
+      <section class="info-panel" aria-labelledby="aboutTitle">
+        <h2 id="aboutTitle">About</h2>
+        <p>[About placeholder]</p>
+      </section>
+    </div>
+  </aside>
 
   <main class="screens">
     <section class="screen" data-screen-label="Your text">
@@ -852,7 +1228,7 @@
       </div>
       <div id="phraseBody" class="screen-body">
         <div class="empty">
-          <div><strong>Upload a .dfont</strong><br />to glitch its bitmap strikes.</div>
+          <div><label class="upload-inline" for="fileInput">Upload .dfont</label><br />or drop it here.</div>
         </div>
       </div>
       <input id="previewText" class="preview-text-proxy" type="text" value="Glitch" autocomplete="off" spellcheck="false" aria-label="Your text" />

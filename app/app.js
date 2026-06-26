@@ -21,6 +21,9 @@ const phraseBody = document.getElementById("phraseBody");
 const typeBody = document.getElementById("typeBody");
 const topbar = document.querySelector(".topbar");
 const dock = document.querySelector(".dock");
+const infoToggle = document.getElementById("infoToggle");
+const infoClose = document.getElementById("infoClose");
+const infoWindow = document.getElementById("infoWindow");
 
 const glitchInput = document.getElementById("glitchInput");
 const glitchValue = document.getElementById("glitchValue");
@@ -80,6 +83,22 @@ fileInput.addEventListener("change", async () => {
   }
 });
 
+infoToggle.addEventListener("click", () => {
+  setInfoOpen(infoWindow.hidden);
+});
+
+infoClose.addEventListener("click", () => {
+  setInfoOpen(false);
+  infoToggle.focus();
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !infoWindow.hidden) {
+    setInfoOpen(false);
+    infoToggle.focus();
+  }
+});
+
 downloadDfont.addEventListener("click", event => {
   if (downloadDfont.getAttribute("aria-disabled") === "true") {
     event.preventDefault();
@@ -97,7 +116,7 @@ previewTextInput.addEventListener("input", () => {
 // the text input (and on phones pops the keyboard) so people type right where
 // the glitched letters appear.
 phraseBody.addEventListener("mousedown", event => {
-  if (event.target.closest("a, button")) {
+  if (event.target.closest("a, button, input, label")) {
     return;
   }
   event.preventDefault();
@@ -107,6 +126,40 @@ phraseBody.addEventListener("mousedown", event => {
 });
 previewTextInput.addEventListener("focus", () => phraseBody.classList.add("typing"));
 previewTextInput.addEventListener("blur", () => phraseBody.classList.remove("typing"));
+
+phraseBody.addEventListener("dragenter", event => {
+  if (!hasDfontDrag(event)) {
+    return;
+  }
+  event.preventDefault();
+  phraseBody.classList.add("drag-over");
+});
+
+phraseBody.addEventListener("dragover", event => {
+  if (!hasDfontDrag(event)) {
+    return;
+  }
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+  phraseBody.classList.add("drag-over");
+});
+
+phraseBody.addEventListener("dragleave", event => {
+  if (!phraseBody.contains(event.relatedTarget)) {
+    phraseBody.classList.remove("drag-over");
+  }
+});
+
+phraseBody.addEventListener("drop", async event => {
+  const file = getDroppedDfont(event);
+  if (!file) {
+    phraseBody.classList.remove("drag-over");
+    return;
+  }
+  event.preventDefault();
+  phraseBody.classList.remove("drag-over");
+  await loadDfont(file);
+});
 
 resInput.addEventListener("input", () => {
   selectedIndex = clamp(Number(resInput.value) || 0, 0, Math.max(0, strikes.length - 1));
@@ -184,6 +237,21 @@ window.addEventListener("resize", () => {
     }
   }, 120);
 });
+
+function setInfoOpen(open) {
+  infoWindow.hidden = !open;
+  infoToggle.setAttribute("aria-expanded", String(open));
+}
+
+function hasDfontDrag(event) {
+  const types = event.dataTransfer ? [...event.dataTransfer.types] : [];
+  return types.includes("Files");
+}
+
+function getDroppedDfont(event) {
+  const files = event.dataTransfer ? [...event.dataTransfer.files] : [];
+  return files.find(file => /\.dfont$/i.test(file.name)) || files[0] || null;
+}
 
 /* ---------- load + rebuild pipeline ---------- */
 async function loadDfont(file) {

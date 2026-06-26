@@ -1,0 +1,1816 @@
+SplineFontDB: 3.2
+FontName: BluuNext-Bold
+FullName: Bluu Next Bold
+FamilyName: Bluu Next
+Weight: Bold
+Copyright: Created by Jean Baptiste Morizot, certains droits reserves (c) 2014
+Version: 1.4
+StyleMapFamilyName: Bluu Next
+ItalicAngle: 0
+UnderlinePosition: -75
+UnderlineWidth: 50
+Ascent: 740
+Descent: 260
+InvalidEm: 0
+UFOAscent: 740
+UFODescent: -260
+LayerCount: 2
+Layer: 0 0 "Back" 1
+Layer: 1 0 "Fore" 0
+PreferredKerning: 1
+StyleMap: 0x0020
+FSType: 8
+OS2Version: 0
+OS2_WeightWidthSlopeOnly: 0
+OS2_UseTypoMetrics: 0
+CreationTime: 1778589504
+ModificationTime: 1778589665
+PfmFamily: 16
+TTFWeight: 700
+TTFWidth: 5
+LineGap: 0
+VLineGap: 0
+Panose: 2 0 8 0 0 0 0 0 0 0
+OS2TypoAscent: 740
+OS2TypoAOffset: 0
+OS2TypoDescent: -260
+OS2TypoDOffset: 0
+OS2TypoLinegap: 200
+OS2WinAscent: 940
+OS2WinAOffset: 0
+OS2WinDescent: 260
+OS2WinDOffset: 0
+HheadAscent: 940
+HheadAOffset: 0
+HheadDescent: -260
+HheadDOffset: 0
+OS2SubXSize: 650
+OS2SubYSize: 600
+OS2SubXOff: 0
+OS2SubYOff: 75
+OS2SupXSize: 650
+OS2SupYSize: 600
+OS2SupXOff: 0
+OS2SupYOff: 350
+OS2StrikeYSize: 50
+OS2StrikeYPos: 294
+OS2CapHeight: 685
+OS2XHeight: 490
+OS2Vendor: '    '
+OS2CodePages: 00000003.00000001
+OS2UnicodeRanges: 00000007.00000000.00000000.00000000
+Lookup: 258 0 0 "'kern' Horizontal Kerning lookup 0" { "'kern' Horizontal Kerning lookup 0 subtable"  } ['kern' ('DFLT' <'dflt' > ) ]
+DEI: 91125
+Group: "@KERN_LEFT_A" "A Aring Adieresis Agrave Atilde Acircumflex Aacute"
+Group: "@KERN_LEFT_D" "D Odieresis Ograve Ocircumflex Otilde O Q Oacute"
+Group: "@KERN_LEFT_R" "Racute R Rcaron"
+Group: "@KERN_LEFT_T" "T Tcaron"
+Group: "@KERN_LEFT_V" "Wgrave Wcircumflex W Wacute V Wdieresis"
+Group: "@KERN_LEFT_Y" "Ycircumflex Y Ydieresis Yacute Ygrave"
+Group: "@KERN_LEFT_b" "ecaron egrave b ecircumflex ograve oe o edieresis eacute e edotaccent oacute"
+Group: "@KERN_LEFT_eight.numr" "six.numr three.numr two.numr four.numr nine.numr five.numr one.numr eight.numr"
+Group: "@KERN_LEFT_m" "ncaron ntilde m nacute n"
+Group: "@KERN_LEFT_ocircumflex" "p thorn ocircumflex odieresis otilde"
+Group: "@KERN_LEFT_v" "wgrave wcircumflex w wacute v wdieresis"
+Group: "@KERN_LEFT_y" "ycircumflex y ydieresis yacute ygrave"
+Group: "@KERN_RIGHT_A" "A Aring AE Aacute Agrave Atilde Acircumflex Adieresis"
+Group: "@KERN_RIGHT_B" "Racute Egrave B E D F I H K L N P Ntilde R Idieresis Edieresis Ecircumflex Iacute Rcaron Igrave Icircumflex Eacute"
+Group: "@KERN_RIGHT_C" "C Odieresis G Ograve OE Cacute Otilde Ccaron Q O Ccircumflex Ccedilla Ocircumflex Oacute"
+Group: "@KERN_RIGHT_T" "T Tcaron"
+Group: "@KERN_RIGHT_U" "Udieresis Ugrave Ucircumflex Uacute U Uring"
+Group: "@KERN_RIGHT_V" "Wgrave Wcircumflex W Wacute V Wdieresis"
+Group: "@KERN_RIGHT_Y" "Ycircumflex Y Ydieresis Yacute Ygrave"
+Group: "@KERN_RIGHT__empty_lu.3_st.0_cl.0" ""
+Group: "@KERN_RIGHT_a" "a aring ae aacute agrave atilde acircumflex adieresis"
+Group: "@KERN_RIGHT_c" "ecircumflex odieresis ograve cdotaccent c edieresis eacute ccedilla edotaccent ecaron egrave e d oe o dcaron q ocircumflex oacute"
+Group: "@KERN_RIGHT_eight.dnom" "eight.dnom zero.dnom six.dnom five.dnom nine.dnom"
+Group: "@KERN_RIGHT_g" "wgrave wcircumflex w g wacute v wdieresis"
+Group: "@KERN_RIGHT_hyphen" "hyphen period underscore hyphen.case"
+Group: "@KERN_RIGHT_i" "icircumflex i idieresis iacute igrave"
+Group: "@KERN_RIGHT_m" "udieresis nacute uacute rcaron uring ugrave rcaron.ss01 racute.ss01 u racute m n ntilde r ucircumflex r.ss01 ncaron"
+Group: "@KERN_RIGHT_seven.dnom" "two.dnom seven.dnom three.dnom"
+Group: "@KERN_RIGHT_y" "ycircumflex y ydieresis yacute ygrave"
+GroupKern: "fraction" "four.dnom" -225
+GroupKern: "fraction" "one.dnom" -220
+GroupKern: "seven.numr" "fraction" -270
+GroupKern: "zero.numr" "fraction" -200
+LangName: 1033 "Created by Jean Baptiste Morizot, certains droits reserves (c) 2014" "" "" "VTF: Bluu Next Bold: 2014" "" "Version 1.004;PS 001.004;hotconv 1.0.70;makeotf.lib2.5.58329" "" "Please refer to the Copyright section for the font trademark attribution notices." "VTF" "Jean-Baptiste Morizot" "" "http://velvetyne.fr" "http://cargocollective.com/jbmrz"
+PickledDataWithLists: "(dp0
+Vcom.typemytype.robofont.binarySource
+p1
+V/Users/jjjlllnnn/Downloads/BluuNext-master/Fonts/BluuNext-Bold.otf
+p2
+sVcom.typemytype.robofont.layerOrder
+p3
+(lp4
+sVcom.typemytype.robofont.segmentType
+p5
+Vcurve
+p6
+sVcom.typemytype.robofont.sort
+p7
+(lp8
+(dp9
+Vascending
+p10
+(lp11
+V.notdef
+p12
+aVA
+p13
+aVAacute
+p14
+aVAcircumflex
+p15
+aVAdieresis
+p16
+aVAgrave
+p17
+aVAring
+p18
+aVAtilde
+p19
+aVAE
+p20
+aVB
+p21
+aVC
+p22
+aVCacute
+p23
+aVCcaron
+p24
+aVCcedilla
+p25
+aVCcircumflex
+p26
+aVD
+p27
+aVEth
+p28
+aVDcaron
+p29
+aVE
+p30
+aVEacute
+p31
+aVEcaron
+p32
+aVEcircumflex
+p33
+aVEdieresis
+p34
+aVEdotaccent
+p35
+aVEgrave
+p36
+aVF
+p37
+aVG
+p38
+aVH
+p39
+aVI
+p40
+aVIJ
+p41
+aVIacute
+p42
+aVIcircumflex
+p43
+aVIdieresis
+p44
+aVIgrave
+p45
+aVJ
+p46
+aVK
+p47
+aVL
+p48
+aVLacute
+p49
+aVLcaron
+p50
+aVLdot
+p51
+aVLslash
+p52
+aVM
+p53
+aVN
+p54
+aVNacute
+p55
+aVNcaron
+p56
+aVNtilde
+p57
+aVO
+p58
+aVOacute
+p59
+aVOcircumflex
+p60
+aVOdieresis
+p61
+aVOgrave
+p62
+aVOslash
+p63
+aVOtilde
+p64
+aVOE
+p65
+aVP
+p66
+aVThorn
+p67
+aVQ
+p68
+aVR
+p69
+aVRacute
+p70
+aVRcaron
+p71
+aVS
+p72
+aVSacute
+p73
+aVScaron
+p74
+aVT
+p75
+aVTcaron
+p76
+aVU
+p77
+aVUacute
+p78
+aVUcircumflex
+p79
+aVUdieresis
+p80
+aVUgrave
+p81
+aVUring
+p82
+aVV
+p83
+aVW
+p84
+aVWacute
+p85
+aVWcircumflex
+p86
+aVWdieresis
+p87
+aVWgrave
+p88
+aVX
+p89
+aVY
+p90
+aVYacute
+p91
+aVYcircumflex
+p92
+aVYdieresis
+p93
+aVYgrave
+p94
+aVZ
+p95
+aVZacute
+p96
+aVZcaron
+p97
+aVZdotaccent
+p98
+aVa
+p99
+aVaacute
+p100
+aVacircumflex
+p101
+aVadieresis
+p102
+aVagrave
+p103
+aVaring
+p104
+aVatilde
+p105
+aVae
+p106
+aVb
+p107
+aVc
+p108
+aVcacute
+p109
+aVccaron
+p110
+aVccedilla
+p111
+aVccircumflex
+p112
+aVcdotaccent
+p113
+aVd
+p114
+aVeth
+p115
+aVdcaron
+p116
+aVe
+p117
+aVeacute
+p118
+aVecaron
+p119
+aVecircumflex
+p120
+aVedieresis
+p121
+aVedotaccent
+p122
+aVegrave
+p123
+aVf
+p124
+aVg
+p125
+aVh
+p126
+aVi
+p127
+aVdotlessi
+p128
+aViacute
+p129
+aVicircumflex
+p130
+aVidieresis
+p131
+aVigrave
+p132
+aVij
+p133
+aVj
+p134
+aVk
+p135
+aVl
+p136
+aVlacute
+p137
+aVlcaron
+p138
+aVldot
+p139
+aVlslash
+p140
+aVm
+p141
+aVn
+p142
+aVnacute
+p143
+aVncaron
+p144
+aVntilde
+p145
+aVo
+p146
+aVoacute
+p147
+aVocircumflex
+p148
+aVodieresis
+p149
+aVograve
+p150
+aVoslash
+p151
+aVotilde
+p152
+aVoe
+p153
+aVp
+p154
+aVthorn
+p155
+aVq
+p156
+aVr
+p157
+aVracute
+p158
+aVrcaron
+p159
+aVs
+p160
+aVsacute
+p161
+aVscaron
+p162
+aVgermandbls
+p163
+aVt
+p164
+aVtcaron
+p165
+aVu
+p166
+aVuacute
+p167
+aVucircumflex
+p168
+aVudieresis
+p169
+aVugrave
+p170
+aVuring
+p171
+aVv
+p172
+aVw
+p173
+aVwacute
+p174
+aVwcircumflex
+p175
+aVwdieresis
+p176
+aVwgrave
+p177
+aVx
+p178
+aVy
+p179
+aVyacute
+p180
+aVycircumflex
+p181
+aVydieresis
+p182
+aVygrave
+p183
+aVz
+p184
+aVzacute
+p185
+aVzcaron
+p186
+aVzdotaccent
+p187
+aVr.ss01
+p188
+aVracute.ss01
+p189
+aVrcaron.ss01
+p190
+aVf_f
+p191
+aVf_f_l
+p192
+aVuni0066006C
+p193
+aVLambda
+p194
+aVmu
+p195
+aVpi
+p196
+aVzero
+p197
+aVone
+p198
+aVtwo
+p199
+aVthree
+p200
+aVfour
+p201
+aVfive
+p202
+aVsix
+p203
+aVseven
+p204
+aVeight
+p205
+aVnine
+p206
+aVzero.osf
+p207
+aVone.osf
+p208
+aVtwo.osf
+p209
+aVthree.osf
+p210
+aVfour.osf
+p211
+aVfive.osf
+p212
+aVsix.osf
+p213
+aVseven.osf
+p214
+aVeight.osf
+p215
+aVnine.osf
+p216
+aVzero.osf.zero
+p217
+aVzero.zero
+p218
+aVfraction
+p219
+aVonehalf
+p220
+aVonequarter
+p221
+aVthreequarters
+p222
+aVoneeighth
+p223
+aVthreeeighths
+p224
+aVfiveeighths
+p225
+aVseveneighths
+p226
+aVzero.dnom
+p227
+aVone.dnom
+p228
+aVtwo.dnom
+p229
+aVthree.dnom
+p230
+aVfour.dnom
+p231
+aVfive.dnom
+p232
+aVsix.dnom
+p233
+aVseven.dnom
+p234
+aVeight.dnom
+p235
+aVnine.dnom
+p236
+aVzero.numr
+p237
+aVone.numr
+p238
+aVtwo.numr
+p239
+aVthree.numr
+p240
+aVfour.numr
+p241
+aVfive.numr
+p242
+aVsix.numr
+p243
+aVseven.numr
+p244
+aVeight.numr
+p245
+aVnine.numr
+p246
+aVzerosuperior
+p247
+aVonesuperior
+p248
+aVtwosuperior
+p249
+aVthreesuperior
+p250
+aVfoursuperior
+p251
+aVfivesuperior
+p252
+aVsixsuperior
+p253
+aVsevensuperior
+p254
+aVeightsuperior
+p255
+aVninesuperior
+p256
+aVasterisk
+p257
+aVbackslash
+p258
+aVbullet
+p259
+aVcolon
+p260
+aVcomma
+p261
+aVellipsis
+p262
+aVexclam
+p263
+aVexclamdown
+p264
+aVnumbersign
+p265
+aVperiod
+p266
+aVperiodcentered
+p267
+aVquestion
+p268
+aVquestiondown
+p269
+aVquotedbl
+p270
+aVquotesingle
+p271
+aVsemicolon
+p272
+aVslash
+p273
+aVunderscore
+p274
+aVexclamdown.case
+p275
+aVquestiondown.case
+p276
+aVbraceleft
+p277
+aVbraceright
+p278
+aVbracketleft
+p279
+aVbracketright
+p280
+aVparenleft
+p281
+aVparenright
+p282
+aVbraceleft.case
+p283
+aVbraceright.case
+p284
+aVbracketleft.case
+p285
+aVbracketright.case
+p286
+aVparenleft.case
+p287
+aVparenright.case
+p288
+aVemdash
+p289
+aVendash
+p290
+aVhyphen
+p291
+aVsofthyphen
+p292
+aVemdash.case
+p293
+aVendash.case
+p294
+aVhyphen.case
+p295
+aVsofthyphen.case
+p296
+aVguillemotleft
+p297
+aVguillemotright
+p298
+aVguilsinglleft
+p299
+aVguilsinglright
+p300
+aVquotedblbase
+p301
+aVquotedblleft
+p302
+aVquotedblright
+p303
+aVquoteleft
+p304
+aVquoteright
+p305
+aVquotesinglbase
+p306
+aVguillemotleft.case
+p307
+aVguillemotright.case
+p308
+aVguilsinglleft.case
+p309
+aVguilsinglright.case
+p310
+aVspace
+p311
+aVuni00A0
+p312
+aVuni2009
+p313
+aVCR
+p314
+aVflorin
+p315
+aVcent
+p316
+aVcurrency
+p317
+aVdollar
+p318
+aVEuro
+p319
+aVsterling
+p320
+aVyen
+p321
+aVapproxequal
+p322
+aVasciitilde
+p323
+aVdivide
+p324
+aVemptyset
+p325
+aVequal
+p326
+aVgreater
+p327
+aVgreaterequal
+p328
+aVinfinity
+p329
+aVintegral
+p330
+aVless
+p331
+aVlessequal
+p332
+aVlogicalnot
+p333
+aVminus
+p334
+aVmultiply
+p335
+aVnotequal
+p336
+aVpartialdiff
+p337
+aVpercent
+p338
+aVperthousand
+p339
+aVplus
+p340
+aVplusminus
+p341
+aVproduct
+p342
+aVradical
+p343
+aVsummation
+p344
+aVlozenge
+p345
+aVampersand
+p346
+aVasciicircum
+p347
+aVat
+p348
+aVbar
+p349
+aVbrokenbar
+p350
+aVcopyright
+p351
+aVdagger
+p352
+aVdaggerdbl
+p353
+aVdegree
+p354
+aVheartsuitblack
+p355
+aVheartsuitwhite
+p356
+aVuni2607
+p357
+aVparagraph
+p358
+aVpointingindexupwhite
+p359
+aVregistered
+p360
+aVsection
+p361
+aVuni2620
+p362
+aVtrademark
+p363
+aVat.case
+p364
+aVuni2607.case
+p365
+aVacute
+p366
+aVcaron
+p367
+aVcedilla
+p368
+aVcircumflex
+p369
+aVdieresis
+p370
+aVdotaccent
+p371
+aVgrave
+p372
+aVmacron
+p373
+aVring
+p374
+aVtilde
+p375
+aVacute.case
+p376
+aVcaron.case
+p377
+aVcedilla.case
+p378
+aVcircumflex.case
+p379
+aVdieresis.case
+p380
+aVring.case
+p381
+aVtilde.case
+p382
+asVtype
+p383
+VglyphList
+p384
+sasVpublic.glyphOrder
+p385
+(lp386
+V.notdef
+p387
+ag13
+aVAacute
+p388
+aVAcircumflex
+p389
+aVAdieresis
+p390
+aVAgrave
+p391
+aVAring
+p392
+aVAtilde
+p393
+aVAE
+p394
+ag21
+ag22
+aVCacute
+p395
+aVCcaron
+p396
+aVCcedilla
+p397
+aVCcircumflex
+p398
+ag27
+aVEth
+p399
+aVDcaron
+p400
+ag30
+aVEacute
+p401
+aVEcaron
+p402
+aVEcircumflex
+p403
+aVEdieresis
+p404
+aVEdotaccent
+p405
+aVEgrave
+p406
+ag37
+ag38
+ag39
+ag40
+aVIJ
+p407
+aVIacute
+p408
+aVIcircumflex
+p409
+aVIdieresis
+p410
+aVIgrave
+p411
+ag46
+ag47
+ag48
+aVLacute
+p412
+aVLcaron
+p413
+aVLdot
+p414
+aVLslash
+p415
+ag53
+ag54
+aVNacute
+p416
+aVNcaron
+p417
+aVNtilde
+p418
+ag58
+aVOacute
+p419
+aVOcircumflex
+p420
+aVOdieresis
+p421
+aVOgrave
+p422
+aVOslash
+p423
+aVOtilde
+p424
+aVOE
+p425
+ag66
+aVThorn
+p426
+ag68
+ag69
+aVRacute
+p427
+aVRcaron
+p428
+ag72
+aVSacute
+p429
+aVScaron
+p430
+ag75
+aVTcaron
+p431
+ag77
+aVUacute
+p432
+aVUcircumflex
+p433
+aVUdieresis
+p434
+aVUgrave
+p435
+aVUring
+p436
+ag83
+ag84
+aVWacute
+p437
+aVWcircumflex
+p438
+aVWdieresis
+p439
+aVWgrave
+p440
+ag89
+ag90
+aVYacute
+p441
+aVYcircumflex
+p442
+aVYdieresis
+p443
+aVYgrave
+p444
+ag95
+aVZacute
+p445
+aVZcaron
+p446
+aVZdotaccent
+p447
+ag99
+aVaacute
+p448
+aVacircumflex
+p449
+aVadieresis
+p450
+aVagrave
+p451
+aVaring
+p452
+aVatilde
+p453
+aVae
+p454
+ag107
+ag108
+aVcacute
+p455
+aVccaron
+p456
+aVccedilla
+p457
+aVccircumflex
+p458
+aVcdotaccent
+p459
+ag114
+aVeth
+p460
+aVdcaron
+p461
+ag117
+aVeacute
+p462
+aVecaron
+p463
+aVecircumflex
+p464
+aVedieresis
+p465
+aVedotaccent
+p466
+aVegrave
+p467
+ag124
+ag125
+ag126
+ag127
+aVdotlessi
+p468
+aViacute
+p469
+aVicircumflex
+p470
+aVidieresis
+p471
+aVigrave
+p472
+aVij
+p473
+ag134
+ag135
+ag136
+aVlacute
+p474
+aVlcaron
+p475
+aVldot
+p476
+aVlslash
+p477
+ag141
+ag142
+aVnacute
+p478
+aVncaron
+p479
+aVntilde
+p480
+ag146
+aVoacute
+p481
+aVocircumflex
+p482
+aVodieresis
+p483
+aVograve
+p484
+aVoslash
+p485
+aVotilde
+p486
+aVoe
+p487
+ag154
+aVthorn
+p488
+ag156
+ag157
+aVracute
+p489
+aVrcaron
+p490
+ag160
+aVsacute
+p491
+aVscaron
+p492
+aVgermandbls
+p493
+ag164
+aVtcaron
+p494
+ag166
+aVuacute
+p495
+aVucircumflex
+p496
+aVudieresis
+p497
+aVugrave
+p498
+aVuring
+p499
+ag172
+ag173
+aVwacute
+p500
+aVwcircumflex
+p501
+aVwdieresis
+p502
+aVwgrave
+p503
+ag178
+ag179
+aVyacute
+p504
+aVycircumflex
+p505
+aVydieresis
+p506
+aVygrave
+p507
+ag184
+aVzacute
+p508
+aVzcaron
+p509
+aVzdotaccent
+p510
+aVr.ss01
+p511
+aVracute.ss01
+p512
+aVrcaron.ss01
+p513
+aVf_f
+p514
+aVf_f_l
+p515
+aVuni0066006C
+p516
+aVLambda
+p517
+aVmu
+p518
+aVpi
+p519
+aVzero
+p520
+aVone
+p521
+aVtwo
+p522
+aVthree
+p523
+aVfour
+p524
+aVfive
+p525
+aVsix
+p526
+aVseven
+p527
+aVeight
+p528
+aVnine
+p529
+aVzero.osf
+p530
+aVone.osf
+p531
+aVtwo.osf
+p532
+aVthree.osf
+p533
+aVfour.osf
+p534
+aVfive.osf
+p535
+aVsix.osf
+p536
+aVseven.osf
+p537
+aVeight.osf
+p538
+aVnine.osf
+p539
+aVzero.osf.zero
+p540
+aVzero.zero
+p541
+aVfraction
+p542
+aVonehalf
+p543
+aVonequarter
+p544
+aVthreequarters
+p545
+aVoneeighth
+p546
+aVthreeeighths
+p547
+aVfiveeighths
+p548
+aVseveneighths
+p549
+aVzero.dnom
+p550
+aVone.dnom
+p551
+aVtwo.dnom
+p552
+aVthree.dnom
+p553
+aVfour.dnom
+p554
+aVfive.dnom
+p555
+aVsix.dnom
+p556
+aVseven.dnom
+p557
+aVeight.dnom
+p558
+aVnine.dnom
+p559
+aVzero.numr
+p560
+aVone.numr
+p561
+aVtwo.numr
+p562
+aVthree.numr
+p563
+aVfour.numr
+p564
+aVfive.numr
+p565
+aVsix.numr
+p566
+aVseven.numr
+p567
+aVeight.numr
+p568
+aVnine.numr
+p569
+aVzerosuperior
+p570
+aVonesuperior
+p571
+aVtwosuperior
+p572
+aVthreesuperior
+p573
+aVfoursuperior
+p574
+aVfivesuperior
+p575
+aVsixsuperior
+p576
+aVsevensuperior
+p577
+aVeightsuperior
+p578
+aVninesuperior
+p579
+aVasterisk
+p580
+aVbackslash
+p581
+aVbullet
+p582
+aVcolon
+p583
+aVcomma
+p584
+aVellipsis
+p585
+aVexclam
+p586
+aVexclamdown
+p587
+aVnumbersign
+p588
+aVperiod
+p589
+aVperiodcentered
+p590
+aVquestion
+p591
+aVquestiondown
+p592
+aVquotedbl
+p593
+aVquotesingle
+p594
+aVsemicolon
+p595
+aVslash
+p596
+aVunderscore
+p597
+aVexclamdown.case
+p598
+aVquestiondown.case
+p599
+aVbraceleft
+p600
+aVbraceright
+p601
+aVbracketleft
+p602
+aVbracketright
+p603
+aVparenleft
+p604
+aVparenright
+p605
+aVbraceleft.case
+p606
+aVbraceright.case
+p607
+aVbracketleft.case
+p608
+aVbracketright.case
+p609
+aVparenleft.case
+p610
+aVparenright.case
+p611
+aVemdash
+p612
+aVendash
+p613
+aVhyphen
+p614
+aVsofthyphen
+p615
+aVemdash.case
+p616
+aVendash.case
+p617
+aVhyphen.case
+p618
+aVsofthyphen.case
+p619
+aVguillemotleft
+p620
+aVguillemotright
+p621
+aVguilsinglleft
+p622
+aVguilsinglright
+p623
+aVquotedblbase
+p624
+aVquotedblleft
+p625
+aVquotedblright
+p626
+aVquoteleft
+p627
+aVquoteright
+p628
+aVquotesinglbase
+p629
+aVguillemotleft.case
+p630
+aVguillemotright.case
+p631
+aVguilsinglleft.case
+p632
+aVguilsinglright.case
+p633
+aVspace
+p634
+aVuni00A0
+p635
+aVuni2009
+p636
+aVCR
+p637
+aVflorin
+p638
+aVcent
+p639
+aVcurrency
+p640
+aVdollar
+p641
+aVEuro
+p642
+aVsterling
+p643
+aVyen
+p644
+aVapproxequal
+p645
+aVasciitilde
+p646
+aVdivide
+p647
+aVemptyset
+p648
+aVequal
+p649
+aVgreater
+p650
+aVgreaterequal
+p651
+aVinfinity
+p652
+aVintegral
+p653
+aVless
+p654
+aVlessequal
+p655
+aVlogicalnot
+p656
+aVminus
+p657
+aVmultiply
+p658
+aVnotequal
+p659
+aVpartialdiff
+p660
+aVpercent
+p661
+aVperthousand
+p662
+aVplus
+p663
+aVplusminus
+p664
+aVproduct
+p665
+aVradical
+p666
+aVsummation
+p667
+aVlozenge
+p668
+aVampersand
+p669
+aVasciicircum
+p670
+aVat
+p671
+aVbar
+p672
+aVbrokenbar
+p673
+aVcopyright
+p674
+aVdagger
+p675
+aVdaggerdbl
+p676
+aVdegree
+p677
+aVheartsuitblack
+p678
+aVheartsuitwhite
+p679
+aVuni2607
+p680
+aVparagraph
+p681
+aVpointingindexupwhite
+p682
+aVregistered
+p683
+aVsection
+p684
+aVuni2620
+p685
+aVtrademark
+p686
+aVat.case
+p687
+aVuni2607.case
+p688
+aVacute
+p689
+aVcaron
+p690
+aVcedilla
+p691
+aVcircumflex
+p692
+aVdieresis
+p693
+aVdotaccent
+p694
+aVgrave
+p695
+aVmacron
+p696
+aVring
+p697
+aVtilde
+p698
+aVacute.case
+p699
+aVcaron.case
+p700
+aVcedilla.case
+p701
+aVcircumflex.case
+p702
+aVdieresis.case
+p703
+aVring.case
+p704
+aVtilde.case
+p705
+as."
+Encoding: Custom
+UnicodeInterp: none
+NameList: AGL For New Fonts
+DisplaySize: -48
+AntiAlias: 1
+FitToEm: 0
+WinInfo: 0 16 8
+BeginPrivate: 7
+BlueFuzz 1 0
+BlueScale 5 0.037
+BlueValues 39 [-12 0 490 502 595 610 685 698 740 756]
+ForceBold 4 true
+OtherBlues 21 [-275 -260 -225 -215]
+StemSnapH 15 [20 86 183 185]
+StemSnapV 9 [120 171]
+EndPrivate
+BeginChars: 371 9
+
+StartChar: A
+Encoding: 1 65 0
+GlifName: A_
+Width: 727
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+414 0 m 257
+ 722 0 l 257
+ 647 67 l 257
+ 377 695 l 257
+ 330 695 l 257
+ 76 79 l 257
+ 5 0 l 257
+ 226 0 l 257
+ 131 78 l 257
+ 185 214 l 257
+ 445 214 l 257
+ 506 69 l 257
+ 414 0 l 257
+313 533 m 257
+ 427 259 l 257
+ 203 259 l 257
+ 313 533 l 257
+EndSplineSet
+EndChar
+
+StartChar: B
+Encoding: 9 66 1
+GlifName: B_
+Width: 630
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+40 685 m 257
+ 100 581 l 257
+ 100 106 l 257
+ 40 0 l 257
+ 260 0 l 258
+ 402 0 595 39 595 183 c 256
+ 595 285 518 344 393 372 c 257
+ 467 400 551 444 551 534 c 256
+ 551 653 437 685 269 685 c 258
+ 40 685 l 257
+230 653 m 257
+ 264 653 l 258
+ 333 653 422 634 422 514 c 256
+ 422 436 358 378 230 378 c 257
+ 230 653 l 257
+230 39 m 257
+ 230 353 l 257
+ 358 353 448 318 448 186 c 256
+ 448 90 363 39 261 39 c 258
+ 230 39 l 257
+EndSplineSet
+EndChar
+
+StartChar: C
+Encoding: 10 67 2
+GlifName: C_
+Width: 651
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+565 482 m 257
+ 565 685 l 257
+ 409 685 l 258
+ 168 685 35 497 35 319 c 256
+ 35 123 147 -12 327 -12 c 256
+ 480 -12 572 107 616 211 c 257
+ 601 221 l 257
+ 569 170 509 105 388 105 c 256
+ 248 105 180 237 180 406 c 256
+ 180 538 230 644 347 644 c 256
+ 451 644 519 566 552 482 c 257
+ 565 482 l 257
+EndSplineSet
+EndChar
+
+StartChar: a
+Encoding: 90 97 3
+GlifName: a
+Width: 534
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+319 0 m 257
+ 514 0 l 257
+ 440 65 l 257
+ 439 65 l 257
+ 439 404 l 257
+ 461 490 l 257
+ 49 490 l 257
+ 49 330 l 257
+ 56 330 l 257
+ 107 406 155 462 235 462 c 256
+ 317 462 319 400 319 320 c 257
+ 146 259 25 207 25 105 c 256
+ 25 24 76 -10 145 -10 c 256
+ 211 -10 281 47 319 84 c 257
+ 319 0 l 257
+319 111 m 257
+ 294 85 263 69 232 69 c 256
+ 190 69 157 90 157 138 c 256
+ 157 186 162 229 319 292 c 257
+ 319 111 l 257
+EndSplineSet
+EndChar
+
+StartChar: b
+Encoding: 107 98 4
+GlifName: b
+Width: 598
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+208 710 m 257
+ 20 653 l 257
+ 88 576 l 257
+ 88 -11 l 257
+ 160 14 l 257
+ 210 0 271 -9 301 -9 c 256
+ 492 -9 561 154 561 265 c 256
+ 561 385 491 500 361 500 c 256
+ 288 500 244 467 208 425 c 257
+ 208 710 l 257
+208 398 m 257
+ 238 417 264 426 291 426 c 256
+ 382 426 443 330 443 174 c 256
+ 443 104 428 35 340 35 c 256
+ 285 35 237 70 208 103 c 257
+ 208 398 l 257
+EndSplineSet
+EndChar
+
+StartChar: c
+Encoding: 120 99 5
+GlifName: c
+Width: 468
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+414 330 m 257
+ 414 490 l 257
+ 294 490 l 258
+ 103 490 30 344 30 225 c 256
+ 30 105 94 -12 225 -12 c 256
+ 349 -12 417 112 438 193 c 257
+ 427 197 l 257
+ 415 162 363 107 294 107 c 256
+ 215 107 145 160 145 316 c 256
+ 145 384 173 455 250 455 c 256
+ 327 455 372 401 407 330 c 257
+ 414 330 l 257
+EndSplineSet
+EndChar
+
+StartChar: one
+Encoding: 246 49 6
+GlifName: one
+Width: 382
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+36 384 m 257
+ 133 420 l 257
+ 133 66 l 257
+ 44 0 l 257
+ 347 0 l 257
+ 253 66 l 257
+ 253 607 l 257
+ 35 386 l 257
+ 36 384 l 257
+EndSplineSet
+EndChar
+
+StartChar: two
+Encoding: 329 50 7
+GlifName: two
+Width: 528
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+43 0 m 257
+ 467 0 l 257
+ 488 240 l 257
+ 484 240 l 257
+ 426 119 l 257
+ 223 116 l 257
+ 161 111 l 257
+ 159 116 l 257
+ 245 216 445 299 445 440 c 256
+ 445 546 318 595 184 595 c 258
+ 48 595 l 257
+ 48 422 l 257
+ 53 422 l 257
+ 88 512 128 568 199 568 c 256
+ 268 568 309 522 309 458 c 256
+ 309 277 119 99 35 33 c 257
+ 43 0 l 257
+EndSplineSet
+EndChar
+
+StartChar: zero
+Encoding: 364 48 8
+GlifName: zero
+Width: 561
+VWidth: 0
+Flags: W
+LayerCount: 2
+Fore
+SplineSet
+521 320 m 256
+ 521 464 446 602 308 602 c 256
+ 129 602 40 423 40 268 c 256
+ 40 124 116 -14 253 -14 c 256
+ 432 -14 521 165 521 320 c 256
+256 557 m 256
+ 339 557 398 398 398 211 c 256
+ 398 149 375 31 306 31 c 256
+ 223 31 165 190 165 377 c 256
+ 165 449 178 557 256 557 c 256
+EndSplineSet
+EndChar
+EndChars
+EndSplineFont
