@@ -29,6 +29,8 @@
       --bevel-lo: #747474;
       --dock-bevel-lo: #6d6d6d;
       --popover-bevel-lo: #4d4d4d;
+      --popover-surface: var(--chrome);
+      --popover-lcd: var(--lcd);
       --popover-shadow: #868686;
       --section-line: #858585;
       --inset-lo: #8b8b8b;
@@ -41,9 +43,10 @@
       --range-thumb-height: 19px;
       --range-thumb-half: 10.5px;
       --range-bevel-size: 2px;
-      --corner-button-offset: 8px;
-      --corner-button-top: calc((var(--topbar-h) - 20px) / 2);
-      --topbar-h: 48px;
+      --corner-button-offset: 12px;
+      --topbar-content-offset-y: 0px;
+      --corner-button-top: calc((var(--topbar-h) - 20px) / 2 + var(--topbar-content-offset-y));
+      --topbar-h: 40px;
       --dock-h: 82px;
       --raised-bevel:
         inset 2px 2px 0 var(--bevel-hi),
@@ -95,8 +98,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      min-height: 48px;
-      padding: 10px 12px;
+      min-height: 40px;
+      padding: 6px 12px;
       border: 3px solid var(--lo);
       border-top-color: var(--hi);
       border-left-color: var(--hi);
@@ -110,7 +113,7 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, calc(-50% - 2px));
+      transform: translate(-50%, calc(-50% + var(--topbar-content-offset-y)));
       margin: 0;
       color: var(--deep);
       font-size: 20px;
@@ -126,7 +129,7 @@
       position: absolute;
       left: 12px;
       top: 50%;
-      transform: translateY(-50%);
+      transform: translateY(calc(-50% + var(--topbar-content-offset-y)));
       min-height: 24px;
       display: inline-flex;
       align-items: center;
@@ -138,7 +141,7 @@
       border-bottom-color: var(--hi);
       background: var(--lcd);
       color: var(--ink);
-      font-size: 10px;
+      font-size: 12px;
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
       font-weight: 900;
       text-transform: uppercase;
@@ -202,13 +205,13 @@
       top: 0;
       right: 0;
       width: min(500px, 100vw);
-      padding: 0 0 10px;
+      padding: 0;
       border: 3px solid var(--lo);
       border-top-color: var(--hi);
       border-left-color: var(--hi);
       border-right-color: var(--popover-bevel-lo);
       border-bottom-color: var(--popover-bevel-lo);
-      background: var(--chrome);
+      background: var(--popover-surface);
       box-shadow: none;
     }
 
@@ -268,32 +271,84 @@
     }
 
     .info-panel {
-      min-height: 100px;
-      padding: 10px 10px 12px;
+      min-height: 0;
+      padding: 8px 10px 10px;
+      box-sizing: border-box;
       border-bottom: 0;
-      background: var(--chrome);
+      background: var(--popover-surface);
       color: var(--label-muted);
       box-shadow: none;
+    }
+
+    .info-panel:not(:has(.info-fold[open])) {
+      height: 40px;
+      padding-top: 0;
+      padding-bottom: 0;
+      display: flex;
+      align-items: center;
+      background-image: linear-gradient(var(--lo), var(--lo));
+      background-position: left bottom;
+      background-size: 100% 2px;
+      background-repeat: no-repeat;
+    }
+
+    .info-panel:has(.info-fold[open]) {
+      height: auto;
+      display: block;
+      background-image: linear-gradient(var(--lo), var(--lo));
+      background-position: left bottom;
+      background-size: 100% 2px;
+      background-repeat: no-repeat;
     }
 
     .info-panel:last-child {
       border-bottom: 0;
     }
 
-    .info-panel h2 {
-      margin: 0 32px 9px 0;
-      min-height: 20px;
+    .info-fold {
+      margin: 0;
+      width: 100%;
+    }
+
+    .info-panel summary {
+      margin: 0 32px 0 0;
+      height: 24px;
+      min-height: 24px;
       display: flex;
       align-items: center;
+      gap: 6px;
       color: var(--label-muted);
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
       font-size: 14px;
       font-weight: 400;
       line-height: 1;
       text-transform: uppercase;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
     }
 
-    .info-panel p {
+    .info-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .info-panel summary::before {
+      content: "+";
+      width: 12px;
+      min-width: 12px;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .info-fold[open] summary::before {
+      content: "-";
+    }
+
+    .info-fold[open] summary {
+      margin-bottom: 9px;
+    }
+
+    .info-panel-body {
       margin: 0;
       min-height: 64px;
       padding: 8px;
@@ -308,6 +363,10 @@
       font-weight: 500;
       line-height: 1.15;
       box-shadow: none;
+    }
+
+    .info-panel-body p {
+      margin: 0;
     }
 
     /* ---------- stacked screens: phrase, then full typeface ---------- */
@@ -362,7 +421,14 @@
     }
 
     .screen-head::after {
-      content: none;
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 0;
+      height: 2px;
+      background: var(--lo);
+      pointer-events: none;
     }
 
     .screen-head > span {
@@ -974,8 +1040,8 @@
     @media (max-width: 720px) {
       body { padding: var(--topbar-h) 0 var(--dock-h); }
       .topbar {
-        min-height: 48px;
-        padding: 10px 8px;
+        min-height: 40px;
+        padding: 6px 8px;
       }
       .topbar h1 { font-size: 18px; }
       .file-name {
@@ -1002,7 +1068,7 @@
       .dock-cell.actions { flex-basis: 180px; min-width: 170px; }
     }
 
-    .info-window .info-panel h2 {
+    .info-window .info-panel summary {
       font-size: 14px;
     }
 
@@ -1013,7 +1079,7 @@
     .screen-body,
     .dock,
     .file-name,
-    .info-panel p,
+    .info-panel-body,
     input[type="text"],
     button,
     .download {
@@ -1099,8 +1165,9 @@
     }
 
     .screen-body,
-    .info-panel p {
+    .info-panel-body {
       --edge-size: 2px;
+      --edge-top-size: 0px;
       --edge-top-color: var(--lo);
       --edge-left-color: var(--lo);
       --edge-right-color: var(--hi);
@@ -1127,13 +1194,13 @@
 
     .info-window {
       border: 0;
-      background-color: var(--chrome);
+      background-color: var(--popover-surface);
       background-image: none;
       box-shadow: none;
     }
 
     .info-window::before,
-    .info-window .info-panel p::before {
+    .info-window .info-panel-body::before {
       content: "";
       position: absolute;
       inset: 0;
@@ -1158,11 +1225,28 @@
 
     .info-window::before {
       --edge-size: 3px;
+      --edge-bottom-size: 0px;
       --edge-top-color: var(--hi);
       --edge-left-color: var(--hi);
       --edge-right-color: var(--lo);
       --edge-bottom-color: var(--lo);
+      background-size:
+        100% var(--edge-top-size, var(--edge-size)),
+        var(--edge-left-size, var(--edge-size)) calc(100% - 3px),
+        100% var(--edge-bottom-size, var(--edge-size)),
+        var(--edge-right-size, var(--edge-size)) 100%;
       z-index: 1;
+    }
+
+    .info-window::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 1px;
+      pointer-events: none;
+      background: var(--lo);
     }
 
     .info-window .info-panel {
@@ -1171,21 +1255,22 @@
 
     .info-window .info-panel + .info-panel {
       background-image: linear-gradient(var(--lo), var(--lo));
-      background-position: left top;
+      background-position: left bottom;
       background-size: 100% 2px;
       background-repeat: no-repeat;
     }
 
-    .info-window .info-panel p {
+    .info-window .info-panel-body {
       position: relative;
       border: 0;
-      background-color: var(--lcd);
+      background-color: var(--popover-lcd);
       background-image: none;
       box-shadow: none;
     }
 
-    .info-window .info-panel p::before {
+    .info-window .info-panel-body::before {
       --edge-size: 2px;
+      --edge-top-size: var(--edge-size);
       --edge-top-color: var(--lo);
       --edge-left-color: var(--lo);
       --edge-right-color: var(--hi);
@@ -1203,13 +1288,29 @@
   <aside id="infoWindow" class="info-window" hidden aria-label="Project information">
     <button id="infoClose" class="info-close" type="button" aria-label="Close">X</button>
     <div class="info-panels">
-      <section class="info-panel" aria-labelledby="instructionTitle">
-        <h2 id="instructionTitle">Instruction</h2>
-        <p>[Instruction placeholder]</p>
-      </section>
       <section class="info-panel" aria-labelledby="aboutTitle">
-        <h2 id="aboutTitle">About</h2>
-        <p>[About placeholder]</p>
+        <details class="info-fold">
+          <summary id="aboutTitle">About</summary>
+          <div class="info-panel-body">
+            <p>[About placeholder]</p>
+          </div>
+        </details>
+      </section>
+      <section class="info-panel" aria-labelledby="makeDfontTitle">
+        <details class="info-fold">
+          <summary id="makeDfontTitle">How to make .dfont</summary>
+          <div class="info-panel-body">
+            <p>[How to make .dfont placeholder]</p>
+          </div>
+        </details>
+      </section>
+      <section class="info-panel" aria-labelledby="glitchTitle">
+        <details class="info-fold">
+          <summary id="glitchTitle">How to glitch</summary>
+          <div class="info-panel-body">
+            <p>[How to glitch placeholder]</p>
+          </div>
+        </details>
       </section>
     </div>
   </aside>
