@@ -53,6 +53,7 @@ let currentFile = null;
 let originalBuffer = null;
 let corruptedBuffer = null;
 let corruptedObjectUrl = null;
+let dfontLoadToken = 0;
 let sampleLoadToken = 0;
 
 let strikes = [];                // corrupted descriptors (with capHeight from clean)
@@ -290,7 +291,7 @@ async function loadSampleManifest() {
     }
 
     for (const sample of samples) {
-      if (!sample || !sample.name || !sample.file) {
+      if (!sample || !sample.name || !isSafeSamplePath(sample.file)) {
         continue;
       }
       const option = document.createElement("option");
@@ -315,6 +316,11 @@ async function loadSampleDfont(filePath) {
 
   const loadToken = sampleLoadToken + 1;
   sampleLoadToken = loadToken;
+  if (!isSafeSamplePath(filePath)) {
+    console.error(`Unsafe sample path: ${filePath}`);
+    setSampleStatus("Sample unavailable");
+    return;
+  }
   setSampleStatus("Loading sample...");
 
   try {
@@ -326,8 +332,8 @@ async function loadSampleDfont(filePath) {
     if (sampleLoadToken !== loadToken || sampleSelect.value !== filePath) {
       return;
     }
-    const fileName = filePath.split("/").pop() || "sample.dfont";
-    const file = new File([buffer], fileName, { type: "application/octet-stream" });
+    const sampleFileName = filePath.split("/").pop() || "sample.dfont";
+    const file = new File([buffer], sampleFileName, { type: "application/octet-stream" });
     await loadDfont(file);
     if (sampleLoadToken === loadToken && sampleSelect.value === filePath) {
       setSampleStatus("Sample loaded");
@@ -355,16 +361,47 @@ function setSampleStatus(message) {
   }
 }
 
+function isSafeSamplePath(filePath) {
+  try {
+    if (typeof filePath !== "string" || !filePath.trim()) {
+      return false;
+    }
+    if (filePath !== filePath.trim() || filePath.includes("\\") || filePath.startsWith("/") || filePath.startsWith("//")) {
+      return false;
+    }
+    if (/^[a-z][a-z\d+.-]*:/i.test(filePath)) {
+      return false;
+    }
+
+    const sampleUrl = new URL(filePath, window.location.href);
+    const samplesRoot = new URL("samples/", window.location.href);
+    return sampleUrl.origin === window.location.origin
+      && sampleUrl.href.startsWith(samplesRoot.href)
+      && /\.dfont$/i.test(sampleUrl.pathname);
+  } catch (error) {
+    return false;
+  }
+}
+
 /* ---------- load + rebuild pipeline ---------- */
 async function loadDfont(file) {
+  const loadToken = dfontLoadToken + 1;
+  dfontLoadToken = loadToken;
   currentFile = file;
   fileName.textContent = file.name;
 
   try {
-    originalBuffer = await file.arrayBuffer();
+    const buffer = await file.arrayBuffer();
+    if (dfontLoadToken !== loadToken) {
+      return;
+    }
+    originalBuffer = buffer;
     selectedIndex = 0;
     rebuild();
   } catch (error) {
+    if (dfontLoadToken !== loadToken) {
+      return;
+    }
     console.error(error);
     originalBuffer = null;
     corruptedBuffer = null;

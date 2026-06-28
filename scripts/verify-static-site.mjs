@@ -44,6 +44,8 @@ async function main() {
   await mustContain("docs/index.html", 'id="sampleStatus"');
   await mustContain("docs/app.js", "loadSampleManifest");
   await mustContain("docs/app.js", "loadSampleDfont");
+  await mustContain("docs/app.js", "dfontLoadToken");
+  await mustContain("docs/app.js", "isSafeSamplePath");
 
   const samples = await readJson("docs/samples/manifest.json");
   if (!Array.isArray(samples) || samples.length !== expectedSamples.size) {
