@@ -20,6 +20,14 @@ async function mustContain(relativePath, expectedText) {
   }
 }
 
+async function mustContainCount(relativePath, expectedText, expectedCount) {
+  const text = await readFile(path.join(root, relativePath), "utf8");
+  const actualCount = text.split(expectedText).length - 1;
+  if (actualCount !== expectedCount) {
+    throw new Error(`${relativePath} must contain ${JSON.stringify(expectedText)} ${expectedCount} times, found ${actualCount}`);
+  }
+}
+
 async function readJson(relativePath) {
   const text = await readFile(path.join(root, relativePath), "utf8");
   return JSON.parse(text);
@@ -48,7 +56,11 @@ async function main() {
   await mustContain("docs/index.html", 'id="downloadDfont"');
   await mustContain("docs/index.html", "Glitch.dfont</strong> corrupts");
   await mustContain("docs/index.html", "Use <a href=\"https://fontforge.org/en-US/\"");
-  await mustContain("docs/index.html", "Upload your <strong>.dfont</strong> file or select one from samples");
+  await mustContain("docs/index.html", 'id="infoToggle" class="info-toggle" type="button" aria-controls="infoWindow" aria-expanded="true"');
+  await mustContain("docs/index.html", '<aside id="infoWindow" class="info-window" aria-label="Project information">');
+  await mustContainCount("docs/index.html", '<details class="info-fold" open>', 3);
+  await mustContain("docs/index.html", "Upload your <strong>.dfont</strong> file or choose a sample from the bottom-left Source menu.");
+  await mustContain("docs/index.html", '<label class="upload-inline" for="fileInput">Upload .dfont</label><br />or choose a sample from the bottom-left Source menu.');
   await mustContain("docs/index.html", "top: 0;\n      right: 0;");
   await mustContain("docs/index.html", "max-height: 100svh;");
   await mustContain("docs/index.html", ".info-panels {\n      display: block;");

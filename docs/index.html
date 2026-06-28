@@ -1384,14 +1384,14 @@
   <header class="topbar">
     <h1>Glitch.dfont</h1>
     <span id="fileName" class="file-name">no file loaded</span>
-    <button id="infoToggle" class="info-toggle" type="button" aria-controls="infoWindow" aria-expanded="false" aria-label="Project info">?</button>
+    <button id="infoToggle" class="info-toggle" type="button" aria-controls="infoWindow" aria-expanded="true" aria-label="Project info">?</button>
   </header>
 
-  <aside id="infoWindow" class="info-window" hidden aria-label="Project information">
+  <aside id="infoWindow" class="info-window" aria-label="Project information">
     <button id="infoClose" class="info-close" type="button" aria-label="Close">X</button>
     <div class="info-panels">
       <section class="info-panel" aria-labelledby="aboutTitle">
-        <details class="info-fold">
+        <details class="info-fold" open>
           <summary id="aboutTitle">About</summary>
           <div class="info-panel-body">
             <div class="info-panel-scroll">
@@ -1402,7 +1402,7 @@
         </details>
       </section>
       <section class="info-panel" aria-labelledby="makeDfontTitle">
-        <details class="info-fold">
+        <details class="info-fold" open>
           <summary id="makeDfontTitle">How to make .dfont</summary>
           <div class="info-panel-body">
             <div class="info-panel-scroll">
@@ -1419,11 +1419,11 @@
         </details>
       </section>
       <section class="info-panel" aria-labelledby="glitchTitle">
-        <details class="info-fold">
+        <details class="info-fold" open>
           <summary id="glitchTitle">How to glitch</summary>
           <div class="info-panel-body">
             <div class="info-panel-scroll">
-              <p>Upload your <strong>.dfont</strong> file or select one from samples. Use the sliders in the bottom panel to control the crashing:</p>
+              <p>Upload your <strong>.dfont</strong> file or choose a sample from the bottom-left Source menu. Use the sliders in the bottom panel to control the crashing:</p>
               <ul>
                 <li><strong>Resolution</strong> selects one bitmap strike in your file for the preview.</li>
                 <li><strong>Glitch probability</strong> sets the chance of corruption for each byte. The higher this number, the more corrupted bytes you have.</li>
@@ -1453,7 +1453,7 @@
       </div>
       <div id="phraseBody" class="screen-body">
         <div class="empty">
-          <div><label class="upload-inline" for="fileInput">Upload .dfont</label><br />or drop it here.</div>
+          <div><label class="upload-inline" for="fileInput">Upload .dfont</label><br />or choose a sample from the bottom-left Source menu.</div>
         </div>
       </div>
       <input id="previewText" class="preview-text-proxy" type="text" value="Glitch" autocomplete="off" spellcheck="false" aria-label="Your text" />
