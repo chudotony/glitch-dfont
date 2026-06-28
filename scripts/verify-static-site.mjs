@@ -58,7 +58,10 @@ async function main() {
   await mustContain("docs/index.html", "Use <a href=\"https://fontforge.org/en-US/\"");
   await mustContain("docs/index.html", 'id="infoToggle" class="info-toggle" type="button" aria-controls="infoWindow" aria-expanded="true"');
   await mustContain("docs/index.html", '<aside id="infoWindow" class="info-window" aria-label="Project information">');
-  await mustContainCount("docs/index.html", '<details class="info-fold" open>', 3);
+  await mustContainCount("docs/index.html", '<details class="info-fold" open>', 1);
+  await mustContain("docs/index.html", '<section class="info-panel" aria-labelledby="aboutTitle">\n        <details class="info-fold" open>');
+  await mustContain("docs/index.html", '<section class="info-panel" aria-labelledby="makeDfontTitle">\n        <details class="info-fold">');
+  await mustContain("docs/index.html", '<section class="info-panel" aria-labelledby="glitchTitle">\n        <details class="info-fold">');
   await mustContain("docs/index.html", "Upload your <strong>.dfont</strong> file or choose a sample from the bottom-left Source menu.");
   await mustContain("docs/index.html", '<label class="upload-inline" for="fileInput">Upload .dfont</label><br />or choose a sample from the bottom-left Source menu.');
   await mustContain("docs/index.html", "top: 0;\n      right: 0;");
