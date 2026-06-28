@@ -83,6 +83,15 @@ async function main() {
     }
   }
 
+  await mustContain("README.md", "# Glitch.dfont");
+  await mustContain("README.md", "https://chudotony.github.io/glitch-dfont/");
+  await mustContain("README.md", "docs/samples");
+  await mustContain("README.md", "runs entirely in the browser");
+  await mustContain("README.md", "Facade Ouest");
+  await mustContain("README.md", "Trickster");
+  await mustContain("README.md", "PicNic");
+  await mustContain("README.md", "docs/samples/licenses");
+
   console.log("Static site structure verified.");
 }
 
