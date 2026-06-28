@@ -40,8 +40,9 @@ async function main() {
   await mustExist("docs/.nojekyll");
   await mustContain("docs/index.html", '<script src="font-core.js"></script>');
   await mustContain("docs/index.html", '<script src="app.js"></script>');
+  await mustContain("docs/index.html", '<label for="fileInput">Source</label>');
   await mustContain("docs/index.html", 'id="sampleSelect"');
-  await mustContain("docs/index.html", 'id="sampleStatus"');
+  await mustContain("docs/index.html", 'id="downloadDfont"');
   await mustContain("docs/app.js", "loadSampleManifest");
   await mustContain("docs/app.js", "loadSampleDfont");
   await mustContain("docs/app.js", "dfontLoadToken");

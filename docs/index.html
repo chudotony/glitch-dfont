@@ -576,6 +576,7 @@
 
     /* ---------- bottom dock ---------- */
     .dock {
+      --dock-control-h: 28px;
       position: fixed;
       z-index: 6;
       left: 0;
@@ -640,7 +641,7 @@
       justify-content: center;
       gap: 8px;
       width: 100%;
-      min-height: 30px;
+      min-height: var(--dock-control-h);
       padding: 0 10px;
       border: 1px solid var(--lo);
       border-top-color: var(--hi);
@@ -920,16 +921,11 @@
       grid-template-columns: minmax(0, 1fr);
       gap: 4px;
     }
-    .dock label.sample-label {
-      margin-top: 2px;
-      font-size: 11px;
-      line-height: 1;
-    }
     .sample-select {
       appearance: none;
       -webkit-appearance: none;
       width: 100%;
-      min-height: 24px;
+      min-height: var(--dock-control-h);
       padding: 0 20px 0 6px;
       border: 1px solid var(--soft-line);
       border-top-color: var(--lo);
@@ -941,13 +937,13 @@
         linear-gradient(45deg, transparent 50%, var(--ink) 50%),
         linear-gradient(135deg, var(--ink) 50%, transparent 50%);
       background-position:
-        calc(100% - 12px) 10px,
-        calc(100% - 7px) 10px;
+        calc(100% - 12px) 11px,
+        calc(100% - 7px) 11px;
       background-size: 5px 5px, 5px 5px;
       background-repeat: no-repeat;
       color: var(--ink);
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0;
       text-transform: uppercase;
@@ -957,27 +953,15 @@
       color: var(--muted);
       opacity: 0.7;
     }
-    .sample-status {
-      min-height: 12px;
-      color: var(--muted);
-      font-family: "Handjet", "Silkscreen", ui-monospace, monospace;
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
     .dock-actions {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       gap: 4px;
     }
     .dfont-actions .file-btn,
-    .dfont-actions .download,
     .dock-actions button {
       min-width: 0;
-      min-height: 30px;
+      min-height: var(--dock-control-h);
       padding: 0 7px;
       border: 1px solid var(--lo);
       border-top-color: var(--hi);
@@ -993,20 +977,12 @@
       white-space: nowrap;
     }
     .dock-actions .reroll { background: var(--chrome-2); }
-    .dfont-actions .download:active {
-      border-top-color: var(--lo);
-      border-left-color: var(--lo);
-      border-right-color: var(--hi);
-      border-bottom-color: var(--hi);
-      box-shadow: var(--pressed-bevel);
-      transform: translate(1px, 1px);
-    }
 
     .download {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 30px;
+      min-height: var(--dock-control-h);
       padding: 0 10px;
       border: 1px solid var(--lo);
       color: var(--deep);
@@ -1027,7 +1003,7 @@
       justify-content: center;
       width: 100%;
       min-width: 0;
-      min-height: 30px;
+      min-height: var(--dock-control-h);
       margin: 0;
       padding: 0 7px;
       border: 0;
@@ -1404,16 +1380,13 @@
 
   <footer class="dock">
     <div class="dock-cell file">
-      <label for="fileInput">.DFONT</label>
+      <label for="fileInput">Source</label>
       <div class="dfont-actions">
         <label class="file-btn dock-button" for="fileInput"><span>Upload source</span></label>
-        <a id="downloadDfont" class="download dock-button" aria-disabled="true">Download glitch</a>
       </div>
-      <label class="sample-label" for="sampleSelect">Sample</label>
-      <select id="sampleSelect" class="sample-select" aria-describedby="sampleStatus">
+      <select id="sampleSelect" class="sample-select">
         <option value="">Choose source</option>
       </select>
-      <span id="sampleStatus" class="sample-status" aria-live="polite"></span>
       <input id="fileInput" type="file" accept=".dfont,.rsrc,application/octet-stream" />
     </div>
 
@@ -1470,6 +1443,7 @@
 
     <div class="dock-cell actions">
       <div class="dock-actions">
+        <a id="downloadDfont" class="download dock-button" aria-disabled="true">Download glitch</a>
         <button id="rerollButton" type="button" class="dock-button">Re-glitch</button>
         <button id="resetButton" type="button" class="dock-button">Reset</button>
       </div>
