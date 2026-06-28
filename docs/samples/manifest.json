@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Utopia Regular",
+    "file": "samples/utopia-regular.dfont",
+    "credit": "Utopia, Adobe Systems Incorporated",
+    "description": "Bitmap .dfont sample with multiple drawable strikes."
+  },
+  {
+    "name": "Utopia Regular 8 px",
+    "file": "samples/utopia-regular-8.dfont",
+    "credit": "Utopia, Adobe Systems Incorporated",
+    "description": "Small bitmap .dfont sample useful for visible byte glitches."
+  }
+]
