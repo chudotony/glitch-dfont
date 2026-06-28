@@ -1,14 +1,45 @@
 [
   {
-    "name": "Utopia Regular",
-    "file": "samples/utopia-regular.dfont",
-    "credit": "Utopia, Adobe Systems Incorporated",
-    "description": "Bitmap .dfont sample with multiple drawable strikes."
+    "name": "Facade Ouest",
+    "file": "samples/facade-ouest.dfont",
+    "credit": "Facade by Eleonore Fines, Velvetyne Type Foundry",
+    "license": "SIL Open Font License 1.1",
+    "sourceUrl": "https://velvetyne.fr/fonts/facade/",
+    "licenseFiles": [
+      "samples/licenses/facade/LICENSE.txt",
+      "samples/licenses/facade/README.md"
+    ],
+    "description": "Display .dfont sample based on the Facade Ouest typeface."
   },
   {
-    "name": "Utopia Regular 8 px",
-    "file": "samples/utopia-regular-8.dfont",
-    "credit": "Utopia, Adobe Systems Incorporated",
-    "description": "Small bitmap .dfont sample useful for visible byte glitches."
+    "name": "Trickster Regular",
+    "file": "samples/trickster-regular.dfont",
+    "credit": "Trickster by Jean-Baptiste Morizot",
+    "license": "SIL Open Font License 1.1",
+    "sourceUrl": "https://medium.com/@jbmorizot/trikster-a-postmortem-686f4608da9e",
+    "licenseFiles": [
+      "samples/licenses/trickster/LICENSE.txt",
+      "samples/licenses/trickster/README.md"
+    ],
+    "description": "Large bitmap .dfont sample with 12, 20, 35, 50, and 75 px strikes."
+  },
+  {
+    "name": "PicNic Regular",
+    "file": "samples/picnic-regular.dfont",
+    "credit": "PicNic by Mariel Nils",
+    "license": "CUTE 0.1",
+    "sourceUrl": "https://velvetyne.fr/fonts/picnic/",
+    "licenseFiles": [
+      "samples/licenses/picnic/LICENSE.txt",
+      "samples/licenses/picnic/CUTE-license.pdf",
+      "samples/licenses/picnic/README.md",
+      "samples/licenses/picnic/COPYRIGHT.md",
+      "samples/licenses/picnic/FONTLOG.md",
+      "samples/licenses/picnic/TRADEMARKS.md"
+    ],
+    "sourceFiles": [
+      "samples/licenses/picnic/sources/PicNic.glyphs"
+    ],
+    "description": "Organic display .dfont sample distributed with CUTE license material."
   }
 ]
