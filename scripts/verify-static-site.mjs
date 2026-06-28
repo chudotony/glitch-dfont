@@ -40,9 +40,26 @@ async function main() {
   await mustExist("docs/.nojekyll");
   await mustContain("docs/index.html", '<script src="font-core.js"></script>');
   await mustContain("docs/index.html", '<script src="app.js"></script>');
+  await mustContain("docs/index.html", "::selection {\n      background: var(--accent);\n      color: var(--deep);");
+  await mustContain("docs/index.html", ":focus-visible {\n      outline: 2px solid var(--accent);\n      outline-offset: 2px;");
   await mustContain("docs/index.html", '<label for="fileInput">Source</label>');
-  await mustContain("docs/index.html", 'id="sampleSelect"');
+  await mustContain("docs/index.html", 'id="sampleSelect" class="sample-select dock-button"');
+  await mustContain("docs/index.html", ".sample-select:disabled {\n      color: var(--muted);\n      opacity: 0.55;");
   await mustContain("docs/index.html", 'id="downloadDfont"');
+  await mustContain("docs/index.html", "Glitch.dfont</strong> corrupts");
+  await mustContain("docs/index.html", "Use <a href=\"https://fontforge.org/en-US/\"");
+  await mustContain("docs/index.html", "Upload your <strong>.dfont</strong> file or select one from samples");
+  await mustContain("docs/index.html", "top: 0;\n      right: 0;");
+  await mustContain("docs/index.html", "max-height: 100svh;");
+  await mustContain("docs/index.html", ".info-panels {\n      display: block;");
+  await mustContain("docs/index.html", ".info-panel:has(.info-fold[open]) {\n      height: auto;");
+  await mustContain("docs/index.html", ".info-panel-body {\n      max-height: min(300px, calc((100svh - 210px) / 3));");
+  await mustContain("docs/index.html", "padding: 0;");
+  await mustContain("docs/index.html", ".info-panel-scroll {\n      max-height: min(300px, calc((100svh - 210px) / 3));");
+  await mustContain("docs/index.html", "padding: 10px 8px 10px;");
+  await mustContain("docs/index.html", "line-height: 1.28;");
+  await mustContain("docs/index.html", "overflow-y: auto;\n      overscroll-behavior: contain;");
+  await mustContain("docs/index.html", '<div class="info-panel-scroll">');
   await mustContain("docs/app.js", "loadSampleManifest");
   await mustContain("docs/app.js", "loadSampleDfont");
   await mustContain("docs/app.js", "dfontLoadToken");
@@ -86,13 +103,12 @@ async function main() {
 
   await mustContain("README.md", "# Glitch.dfont");
   await mustContain("README.md", "https://chudotony.github.io/glitch-dfont/");
-  await mustContain("README.md", "browser-based `.dfont` bitmap font glitching app and lab");
-  await mustContain("README.md", "Uploaded or dropped files are processed locally");
+  await mustContain("README.md", "browser-based `.dfont` bitmap font glitching");
+  await mustContain("README.md", "uploaded files are processed locally");
   await mustContain("README.md", "are not sent to a server");
-  await mustContain("README.md", "Select an included sample");
-  await mustContain("README.md", "upload/drop a `.dfont` file");
-  await mustContain("README.md", "adjust the glitch controls");
-  await mustContain("README.md", "download the resulting font file");
+  await mustContain("README.md", "choose one of the samples");
+  await mustContain("README.md", "crash your own `.dfont` file");
+  await mustContain("README.md", "current glitch settings are applied to all of the strikes");
   await mustContain("README.md", "docs/samples");
   await mustContain("README.md", "runs entirely in the browser");
   await mustContain("README.md", "Facade Ouest");
@@ -105,9 +121,8 @@ async function main() {
   await mustContain("README.md", "CUTE 0.1");
   await mustContain("README.md", "docs/samples/licenses");
   await mustContain("README.md", "`docs/` - GitHub Pages app");
-  await mustContain("README.md", "`research/` - planned archive location");
-  await mustContain("README.md", "Digital Culture class experiment");
-  await mustContain("README.md", "standalone browser tool");
+  await mustContain("README.md", "`research/` - archived original coursework and process materials");
+  await mustContain("README.md", "Digital Culture II class");
 
   await mustExist("research/README.md");
   await mustExist("research/bitmap/README.md");

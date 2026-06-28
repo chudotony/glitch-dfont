@@ -205,6 +205,7 @@
       top: 0;
       right: 0;
       width: min(500px, 100vw);
+      max-height: 100svh;
       padding: 0;
       border: 3px solid var(--lo);
       border-top-color: var(--hi);
@@ -213,6 +214,7 @@
       border-bottom-color: var(--popover-bevel-lo);
       background: var(--popover-surface);
       box-shadow: none;
+      overflow: hidden;
     }
 
     .info-window[hidden] {
@@ -220,10 +222,10 @@
     }
 
     .info-close {
-      position: fixed;
+      position: absolute;
       z-index: 9;
       right: var(--corner-button-offset);
-      top: var(--corner-button-top);
+      top: calc((40px - 20px) / 2);
       appearance: none;
       -webkit-appearance: none;
       width: 20px;
@@ -266,8 +268,7 @@
     }
 
     .info-panels {
-      display: grid;
-      grid-template-columns: 1fr;
+      display: block;
     }
 
     .info-panel {
@@ -310,6 +311,10 @@
       width: 100%;
     }
 
+    .info-fold[open] {
+      display: block;
+    }
+
     .info-panel summary {
       margin: 0 32px 0 0;
       height: 24px;
@@ -349,9 +354,9 @@
     }
 
     .info-panel-body {
+      max-height: min(300px, calc((100svh - 210px) / 3));
       margin: 0;
-      min-height: 64px;
-      padding: 8px;
+      padding: 0;
       border: 2px solid var(--lo);
       border-top-color: var(--lo);
       border-left-color: var(--lo);
@@ -359,14 +364,45 @@
       border-bottom-color: var(--hi);
       background: var(--lcd);
       color: var(--ink);
-      font-size: 17px;
-      font-weight: 500;
-      line-height: 1.15;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      line-height: 1.28;
+      word-spacing: 0.03em;
       box-shadow: none;
+      overflow: hidden;
     }
 
-    .info-panel-body p {
+    .info-panel-scroll {
+      max-height: min(300px, calc((100svh - 210px) / 3));
+      box-sizing: border-box;
+      padding: 10px 8px 10px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .info-panel-scroll p {
       margin: 0;
+    }
+
+    .info-panel-scroll p + p {
+      margin-top: 8px;
+    }
+
+    .info-panel-scroll p + ol {
+      margin-top: 8px;
+    }
+
+    .info-panel-scroll p + ul {
+      margin-top: 8px;
+    }
+
+    .info-panel-scroll ul {
+      list-style-type: square;
+    }
+
+    .info-panel-scroll a {
+      color: var(--accent);
     }
 
     /* ---------- stacked screens: phrase, then full typeface ---------- */
@@ -927,31 +963,16 @@
       width: 100%;
       min-height: var(--dock-control-h);
       padding: 0 20px 0 6px;
-      border: 1px solid var(--soft-line);
-      border-top-color: var(--lo);
-      border-left-color: var(--lo);
-      border-right-color: var(--hi);
-      border-bottom-color: var(--hi);
-      background-color: var(--lcd);
-      background-image:
-        linear-gradient(45deg, transparent 50%, var(--ink) 50%),
-        linear-gradient(135deg, var(--ink) 50%, transparent 50%);
-      background-position:
-        calc(100% - 12px) 11px,
-        calc(100% - 7px) 11px;
-      background-size: 5px 5px, 5px 5px;
-      background-repeat: no-repeat;
       color: var(--ink);
       font-family: "Silkscreen", "Handjet", ui-monospace, monospace;
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0;
       text-transform: uppercase;
-      box-shadow: var(--input-bevel);
     }
     .sample-select:disabled {
       color: var(--muted);
-      opacity: 0.7;
+      opacity: 0.55;
     }
     .dock-actions {
       display: grid;
@@ -1045,6 +1066,44 @@
         linear-gradient(var(--hi), var(--hi)),
         linear-gradient(var(--hi), var(--hi));
       box-shadow: none;
+    }
+
+    .dock .sample-select.dock-button {
+      justify-content: flex-start;
+      padding-right: 22px;
+      background-image:
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(45deg, transparent 50%, var(--deep) 50%),
+        linear-gradient(135deg, var(--deep) 50%, transparent 50%);
+      background-position:
+        left top,
+        left var(--range-bevel-size),
+        left bottom,
+        right var(--range-bevel-size),
+        calc(100% - 14px) 12px,
+        calc(100% - 9px) 12px;
+      background-size:
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size)),
+        100% var(--range-bevel-size),
+        var(--range-bevel-size) calc(100% - var(--range-bevel-size) - var(--range-bevel-size)),
+        5px 5px,
+        5px 5px;
+      text-align: left;
+      text-align-last: left;
+    }
+
+    .dock .sample-select.dock-button:active {
+      background-image:
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--lo), var(--lo)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(var(--hi), var(--hi)),
+        linear-gradient(45deg, transparent 50%, var(--deep) 50%),
+        linear-gradient(135deg, var(--deep) 50%, transparent 50%);
     }
 
     .download[aria-disabled="true"] {
@@ -1300,6 +1359,25 @@
       --edge-right-color: var(--hi);
       --edge-bottom-color: var(--hi);
     }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--deep);
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 0;
+    }
+
+    .dock .dock-button:focus-visible,
+    button:focus-visible,
+    .download:focus-visible,
+    .sample-select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
@@ -1316,7 +1394,10 @@
         <details class="info-fold">
           <summary id="aboutTitle">About</summary>
           <div class="info-panel-body">
-            <p>[About placeholder]</p>
+            <div class="info-panel-scroll">
+              <p><strong>Glitch.dfont</strong> corrupts <strong>sfnt</strong> bitmaps inside <strong>.dfont</strong>, a container format used in Mac OS X (2000-2013) as a bridge between older classic Mac OS resource formats and newer Unix-based macOS file types. Today, <strong>.dfont</strong> can still be rendered by macOS Tahoe, but only the highest resolution in the file is displayed.</p>
+              <p>The corrupted bitmaps sit inside an <strong>sfnt</strong> table-based structure, which makes the format suitable for controlled glitching. Modern <strong>.otf</strong> and <strong>.ttf</strong> files use the same table-based structure, but they do not have the same bitmap vibe. Glitch.dfont appeals to that raster aesthetic, with an interface inspired by SteamAMP, the 2004 skin for Winamp.</p>
+            </div>
           </div>
         </details>
       </section>
@@ -1324,7 +1405,16 @@
         <details class="info-fold">
           <summary id="makeDfontTitle">How to make .dfont</summary>
           <div class="info-panel-body">
-            <p>[How to make .dfont placeholder]</p>
+            <div class="info-panel-scroll">
+              <p>Use <a href="https://fontforge.org/en-US/" target="_blank" rel="noopener">FontForge</a>:</p>
+              <ol>
+                <li>Open your font file, usually <strong>.ufo</strong>, <strong>.ttf</strong>, or <strong>.otf</strong> containing a single face.</li>
+                <li>Go to Element &gt; Bitmap Strikes Available.</li>
+                <li>Set the pixel sizes you want, separated by commas.</li>
+                <li>Go to File &gt; Generate Fonts.</li>
+                <li>Select <strong>No Outline Font</strong> for the outline selector and <strong>Apple bitmap only sfnt (dfont)</strong> for the bitmap selector. Enter the output directory and filename, then click <strong>Generate</strong>.</li>
+              </ol>
+            </div>
           </div>
         </details>
       </section>
@@ -1332,7 +1422,17 @@
         <details class="info-fold">
           <summary id="glitchTitle">How to glitch</summary>
           <div class="info-panel-body">
-            <p>[How to glitch placeholder]</p>
+            <div class="info-panel-scroll">
+              <p>Upload your <strong>.dfont</strong> file or select one from samples. Use the sliders in the bottom panel to control the crashing:</p>
+              <ul>
+                <li><strong>Resolution</strong> selects one bitmap strike in your file for the preview.</li>
+                <li><strong>Glitch probability</strong> sets the chance of corruption for each byte. The higher this number, the more corrupted bytes you have.</li>
+                <li><strong>Maximum offset</strong> sets the largest possible value that is added to or subtracted from a corrupted byte.</li>
+                <li><strong>Re-glitch</strong> updates the corrupted bytes with the same parameters.</li>
+                <li><strong>Reset</strong> sets the glitch probability back to zero, showing you the original bitmap.</li>
+                <li><strong>Download glitch</strong> saves the result when you're satisfied with your new <strong>.dfont</strong>. The current glitch settings are applied to all bitmap strikes in the downloaded file.</li>
+              </ul>
+            </div>
           </div>
         </details>
       </section>
@@ -1384,7 +1484,7 @@
       <div class="dfont-actions">
         <label class="file-btn dock-button" for="fileInput"><span>Upload source</span></label>
       </div>
-      <select id="sampleSelect" class="sample-select">
+      <select id="sampleSelect" class="sample-select dock-button">
         <option value="">Choose source</option>
       </select>
       <input id="fileInput" type="file" accept=".dfont,.rsrc,application/octet-stream" />
