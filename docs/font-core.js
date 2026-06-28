@@ -22,18 +22,23 @@ function corruptDfontBytes(buffer, targets, edits) {
     const scopeStart = clamp(target.scopeStart, 0, bytes.length);
     const scopeEnd = clamp(target.scopeEnd, scopeStart, bytes.length);
     const boundarySearchEnd = clamp(target.boundarySearchEnd ?? scopeEnd, scopeEnd, bytes.length);
+    const usesTableRange = target.type === "sfnt";
     const startMatches = findSignatureOffsets(bytes, GLITCH_START_SIGNATURE, scopeStart, scopeEnd);
-    const startSignatureOffset = startMatches.length > 0 ? startMatches[0] : -1;
-    const contentStart = startSignatureOffset >= 0
-      ? startSignatureOffset + GLITCH_START_SIGNATURE.length
-      : -1;
-    const endMatches = contentStart >= 0
+    const startSignatureOffset = !usesTableRange && startMatches.length > 0 ? startMatches[0] : -1;
+    const contentStart = usesTableRange
+      ? scopeStart
+      : startSignatureOffset >= 0
+        ? startSignatureOffset + GLITCH_START_SIGNATURE.length
+        : -1;
+    const endMatches = !usesTableRange && contentStart >= 0
       ? findSignatureOffsets(bytes, GLITCH_END_SIGNATURE, contentStart, boundarySearchEnd)
       : [];
     const endSignatureOffset = endMatches.length > 0 ? endMatches[0] : -1;
-    const contentEnd = endSignatureOffset >= contentStart
-      ? endSignatureOffset
-      : scopeEnd;
+    const contentEnd = usesTableRange
+      ? scopeEnd
+      : endSignatureOffset >= contentStart
+        ? endSignatureOffset
+        : scopeEnd;
     let mutated = 0;
     let actualLength = 0;
 
@@ -59,7 +64,7 @@ function corruptDfontBytes(buffer, targets, edits) {
       endMatches: endMatches.length,
       startSignatureOffset,
       endSignatureOffset,
-      usedScopeEndFallback: endSignatureOffset < contentStart,
+      usedScopeEndFallback: usesTableRange || endSignatureOffset < contentStart,
       offset: contentStart,
       length: actualLength,
       mutated
