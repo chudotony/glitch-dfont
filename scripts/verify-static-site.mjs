@@ -40,6 +40,10 @@ async function main() {
   await mustExist("docs/.nojekyll");
   await mustContain("docs/index.html", '<script src="font-core.js"></script>');
   await mustContain("docs/index.html", '<script src="app.js"></script>');
+  await mustContain("docs/index.html", 'id="sampleSelect"');
+  await mustContain("docs/index.html", 'id="sampleStatus"');
+  await mustContain("docs/app.js", "loadSampleManifest");
+  await mustContain("docs/app.js", "loadSampleDfont");
 
   const samples = await readJson("docs/samples/manifest.json");
   if (!Array.isArray(samples) || samples.length !== expectedSamples.size) {

@@ -9,6 +9,8 @@
 /* ---------- element refs ---------- */
 const fileInput = document.getElementById("fileInput");
 const fileName = document.getElementById("fileName");
+const sampleSelect = document.getElementById("sampleSelect");
+const sampleStatus = document.getElementById("sampleStatus");
 const previewTextInput = document.getElementById("previewText");
 const resInput = document.getElementById("resInput");
 const resTicks = document.getElementById("resTicks");
@@ -37,6 +39,7 @@ const downloadDfont = document.getElementById("downloadDfont");
 
 const INK = "#404040";
 const STORE_KEY = "dfont-glitch-lab";
+const SAMPLE_MANIFEST = "samples/manifest.json";
 
 /* default glitch settings — used by Reset */
 const GLITCH_DEFAULTS = Object.freeze({
@@ -50,6 +53,7 @@ let currentFile = null;
 let originalBuffer = null;
 let corruptedBuffer = null;
 let corruptedObjectUrl = null;
+let sampleLoadToken = 0;
 
 let strikes = [];                // corrupted descriptors (with capHeight from clean)
 let selectedIndex = 0;
@@ -67,6 +71,7 @@ restorePrefs();
 updateAllRangeFills();
 updateTickStates(glitchInput, glitchTicks);
 updateTickStates(maxOffsetInput, maxOffsetTicks);
+loadSampleManifest();
 
 const chromeObserver = new ResizeObserver(() => {
   document.documentElement.style.setProperty("--topbar-h", `${topbar.offsetHeight}px`);
@@ -79,7 +84,18 @@ chromeObserver.observe(dock);
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (file) {
+    clearSampleSelection();
     await loadDfont(file);
+  }
+});
+
+sampleSelect.addEventListener("change", async () => {
+  const filePath = sampleSelect.value;
+  if (filePath) {
+    await loadSampleDfont(filePath);
+  } else {
+    sampleLoadToken += 1;
+    setSampleStatus("");
   }
 });
 
@@ -158,6 +174,7 @@ phraseBody.addEventListener("drop", async event => {
   }
   event.preventDefault();
   phraseBody.classList.remove("drag-over");
+  clearSampleSelection();
   await loadDfont(file);
 });
 
@@ -251,6 +268,91 @@ function hasDfontDrag(event) {
 function getDroppedDfont(event) {
   const files = event.dataTransfer ? [...event.dataTransfer.files] : [];
   return files.find(file => /\.dfont$/i.test(file.name)) || files[0] || null;
+}
+
+/* ---------- bundled samples ---------- */
+async function loadSampleManifest() {
+  if (!sampleSelect) {
+    return;
+  }
+
+  sampleSelect.disabled = true;
+  setSampleStatus("Loading samples...");
+
+  try {
+    const response = await fetch(SAMPLE_MANIFEST);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const samples = await response.json();
+    if (!Array.isArray(samples)) {
+      throw new Error("Manifest is not an array");
+    }
+
+    for (const sample of samples) {
+      if (!sample || !sample.name || !sample.file) {
+        continue;
+      }
+      const option = document.createElement("option");
+      option.value = sample.file;
+      option.textContent = sample.name;
+      sampleSelect.appendChild(option);
+    }
+
+    sampleSelect.disabled = sampleSelect.options.length <= 1;
+    setSampleStatus(sampleSelect.disabled ? "No samples found" : "");
+  } catch (error) {
+    console.error(error);
+    sampleSelect.disabled = true;
+    setSampleStatus("Samples unavailable");
+  }
+}
+
+async function loadSampleDfont(filePath) {
+  if (!filePath) {
+    return;
+  }
+
+  const loadToken = sampleLoadToken + 1;
+  sampleLoadToken = loadToken;
+  setSampleStatus("Loading sample...");
+
+  try {
+    const response = await fetch(filePath);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const buffer = await response.arrayBuffer();
+    if (sampleLoadToken !== loadToken || sampleSelect.value !== filePath) {
+      return;
+    }
+    const fileName = filePath.split("/").pop() || "sample.dfont";
+    const file = new File([buffer], fileName, { type: "application/octet-stream" });
+    await loadDfont(file);
+    if (sampleLoadToken === loadToken && sampleSelect.value === filePath) {
+      setSampleStatus("Sample loaded");
+    }
+  } catch (error) {
+    console.error(error);
+    if (sampleLoadToken === loadToken) {
+      setSampleStatus("Sample unavailable");
+    }
+  }
+}
+
+function clearSampleSelection() {
+  if (!sampleSelect) {
+    return;
+  }
+  sampleLoadToken += 1;
+  sampleSelect.value = "";
+  setSampleStatus("");
+}
+
+function setSampleStatus(message) {
+  if (sampleStatus) {
+    sampleStatus.textContent = message;
+  }
 }
 
 /* ---------- load + rebuild pipeline ---------- */
