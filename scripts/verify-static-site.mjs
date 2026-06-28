@@ -85,12 +85,28 @@ async function main() {
 
   await mustContain("README.md", "# Glitch.dfont");
   await mustContain("README.md", "https://chudotony.github.io/glitch-dfont/");
+  await mustContain("README.md", "browser-based `.dfont` bitmap font glitching app and lab");
+  await mustContain("README.md", "Uploaded or dropped files are processed locally");
+  await mustContain("README.md", "are not sent to a server");
+  await mustContain("README.md", "Select an included sample");
+  await mustContain("README.md", "upload/drop a `.dfont` file");
+  await mustContain("README.md", "adjust the glitch controls");
+  await mustContain("README.md", "download the resulting font file");
   await mustContain("README.md", "docs/samples");
   await mustContain("README.md", "runs entirely in the browser");
   await mustContain("README.md", "Facade Ouest");
+  await mustContain("README.md", "Eleonore Fines / Velvetyne Type Foundry");
   await mustContain("README.md", "Trickster");
+  await mustContain("README.md", "Jean-Baptiste Morizot");
   await mustContain("README.md", "PicNic");
+  await mustContain("README.md", "Mariel Nils");
+  await mustContain("README.md", "SIL Open Font License 1.1");
+  await mustContain("README.md", "CUTE 0.1");
   await mustContain("README.md", "docs/samples/licenses");
+  await mustContain("README.md", "`docs/` - GitHub Pages app");
+  await mustContain("README.md", "`research/` - planned archive location");
+  await mustContain("README.md", "Digital Culture class experiment");
+  await mustContain("README.md", "standalone browser tool");
 
   console.log("Static site structure verified.");
 }

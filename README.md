@@ -22,6 +22,6 @@ Bundled samples live in `docs/samples`:
 
 - `docs/` - GitHub Pages app
 - `docs/samples/` - hosted samples
-- `research/` - original coursework and process archive
+- `research/` - planned archive location for original coursework and process materials
 
 The project began as a Digital Culture class experiment and became a standalone browser tool.
