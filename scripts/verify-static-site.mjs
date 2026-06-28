@@ -108,6 +108,13 @@ async function main() {
   await mustContain("README.md", "Digital Culture class experiment");
   await mustContain("README.md", "standalone browser tool");
 
+  await mustExist("research/README.md");
+  await mustExist("research/bitmap/README.md");
+  await mustExist("research/postscript/utopia_test/README");
+  await mustExist("research/woff2/README.md");
+  await mustExist("research/dfont_rendering/index.html");
+  await mustExist("research/Utopia-Regular_8_images");
+
   console.log("Static site structure verified.");
 }
 
